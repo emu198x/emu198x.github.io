@@ -1,5 +1,137 @@
 const romRoot = '~/.emu198x/roms';
 
+const spectrumVariant = (id, name, machine, requiredFiles, maxFrames = 300, waitForBoot = true) => ({
+  id,
+  name,
+  image: `/media/boot/${id}.png`,
+  caption: `${name} firmware boot capture.`,
+  capture: {
+    package: 'emu198x-spectrum',
+    mode: 'script',
+    args: ['--script', '{script}'],
+    script: [
+      { action: 'set_machine', machine },
+      waitForBoot
+        ? { action: 'wait_for_boot', max_frames: maxFrames }
+        : { action: 'run_frames', frames: maxFrames },
+      { action: 'save_screenshot', path: '{output}' },
+    ],
+    requiredFiles,
+  },
+});
+
+const spectrumVariants = [
+  spectrumVariant('zx-spectrum-16k', 'ZX Spectrum 16K', 'spectrum_16k', [
+    `${romRoot}/sinclair-zx-spectrum-48k/48.rom`,
+  ]),
+  spectrumVariant('zx-spectrum-plus', 'ZX Spectrum+', 'spectrum_plus', [
+    `${romRoot}/sinclair-zx-spectrum-48k/48.rom`,
+  ]),
+  spectrumVariant('zx-spectrum-128k', 'ZX Spectrum 128', 'spectrum_128k', [
+    `${romRoot}/sinclair-zx-spectrum-128k/128-0.rom`,
+    `${romRoot}/sinclair-zx-spectrum-128k/128-1.rom`,
+  ]),
+  spectrumVariant('zx-spectrum-plus2', 'ZX Spectrum +2', 'spectrum_plus2', [
+    `${romRoot}/amstrad-zx-spectrum-plus2/plus2-0.rom`,
+    `${romRoot}/amstrad-zx-spectrum-plus2/plus2-1.rom`,
+  ]),
+  spectrumVariant('zx-spectrum-plus2a', 'ZX Spectrum +2A', 'spectrum_plus2a', [
+    `${romRoot}/amstrad-zx-spectrum-plus3/plus3-0.rom`,
+    `${romRoot}/amstrad-zx-spectrum-plus3/plus3-1.rom`,
+    `${romRoot}/amstrad-zx-spectrum-plus3/plus3-2.rom`,
+    `${romRoot}/amstrad-zx-spectrum-plus3/plus3-3.rom`,
+  ]),
+  spectrumVariant('zx-spectrum-plus2b', 'ZX Spectrum +2B', 'spectrum_plus2b', [
+    `${romRoot}/amstrad-zx-spectrum-plus2b/plus3-0.rom`,
+    `${romRoot}/amstrad-zx-spectrum-plus2b/plus3-1.rom`,
+    `${romRoot}/amstrad-zx-spectrum-plus2b/plus3-2.rom`,
+    `${romRoot}/amstrad-zx-spectrum-plus2b/plus3-3.rom`,
+  ]),
+  spectrumVariant('zx-spectrum-plus3', 'ZX Spectrum +3', 'spectrum_plus3', [
+    `${romRoot}/amstrad-zx-spectrum-plus3/plus3-0.rom`,
+    `${romRoot}/amstrad-zx-spectrum-plus3/plus3-1.rom`,
+    `${romRoot}/amstrad-zx-spectrum-plus3/plus3-2.rom`,
+    `${romRoot}/amstrad-zx-spectrum-plus3/plus3-3.rom`,
+  ]),
+  spectrumVariant('pentagon-128', 'Pentagon 128', 'pentagon_128', [
+    `${romRoot}/pentagon-128/pentagon-0.rom`,
+    `${romRoot}/pentagon-128/pentagon-1.rom`,
+  ]),
+  spectrumVariant('scorpion-zs256', 'Scorpion ZS-256', 'scorpion_zs256', [
+    `${romRoot}/scorpion-zs256/scorpion-0.rom`,
+    `${romRoot}/scorpion-zs256/scorpion-1.rom`,
+    `${romRoot}/scorpion-zs256/scorpion-2.rom`,
+    `${romRoot}/scorpion-zs256/scorpion-3.rom`,
+  ], 300, false),
+  spectrumVariant('timex-tc2048', 'Timex TC2048', 'timex_tc2048', [
+    `${romRoot}/timex-tc2048/tc2048.rom`,
+  ]),
+  spectrumVariant('timex-tc2068', 'Timex TC2068', 'timex_tc2068', [
+    `${romRoot}/timex-ts2068/ts2068.rom`,
+    `${romRoot}/timex-ts2068/exrom.rom`,
+  ], 300, false),
+  spectrumVariant('timex-ts2068', 'Timex TS2068', 'timex_ts2068', [
+    `${romRoot}/timex-ts2068/ts2068.rom`,
+    `${romRoot}/timex-ts2068/exrom.rom`,
+  ], 300, false),
+];
+
+const amigaVariant = (id, name, model, kickstart) => ({
+  id,
+  name,
+  image: `/media/boot/${id}.png`,
+  caption: `${name} Kickstart boot capture.`,
+  capture: {
+    package: 'emu198x-amiga',
+    args: [
+      '--headless',
+      '--model',
+      model,
+      '--kickstart',
+      kickstart,
+      '--frames',
+      '650',
+      '--screenshot',
+      '{output}',
+    ],
+    requiredFiles: [kickstart],
+  },
+});
+
+const amigaVariants = [
+  {
+    id: 'amiga-a1000',
+    name: 'Amiga A1000',
+    image: '/media/boot/amiga-a1000.png',
+    caption: 'A1000 bootstrap capture. Set EMU198X_BOOT_AMIGA_A1000_DISK to publish this image.',
+    capture: {
+      package: 'emu198x-amiga',
+      args: [
+        '--headless',
+        '--model',
+        'a1000',
+        '--kickstart',
+        `${romRoot}/commodore-amiga/a1000-bootstrap.rom`,
+        '--disk',
+        '{media}',
+        '--frames',
+        '900',
+        '--screenshot',
+        '{output}',
+      ],
+      mediaEnv: 'EMU198X_BOOT_AMIGA_A1000_DISK',
+      mediaLabel: 'A1000 Kickstart disk',
+      requiredFiles: [`${romRoot}/commodore-amiga/a1000-bootstrap.rom`],
+    },
+  },
+  amigaVariant('amiga-a500-a501', 'Amiga A500 + A501', 'a500-a501', `${romRoot}/commodore-amiga/kick13.rom`),
+  amigaVariant('amiga-a500-plus', 'Amiga A500+', 'a500-plus', `${romRoot}/commodore-amiga/kick204.rom`),
+  amigaVariant('amiga-a500-maxed', 'Amiga A500 maxed', 'a500-maxed', `${romRoot}/commodore-amiga/kick13.rom`),
+  amigaVariant('amiga-a600', 'Amiga A600', 'a600', `${romRoot}/commodore-amiga/kick205.rom`),
+  amigaVariant('amiga-a1200', 'Amiga A1200', 'a1200', `${romRoot}/commodore-amiga/kick31a1200.rom`),
+  amigaVariant('amiga-a2000', 'Amiga A2000', 'a2000', `${romRoot}/commodore-amiga/kick13.rom`),
+];
+
 export const bootScreenshots = [
   {
     id: 'zx-spectrum',
@@ -17,6 +149,7 @@ export const bootScreenshots = [
         { action: 'save_screenshot', path: '{output}' },
       ],
     },
+    variants: spectrumVariants,
   },
   {
     id: 'commodore-c64',
@@ -79,6 +212,7 @@ export const bootScreenshots = [
       ],
       requiredFiles: [`${romRoot}/commodore-amiga/kick13.rom`],
     },
+    variants: amigaVariants,
   },
   {
     id: 'game-boy',
@@ -472,5 +606,19 @@ export const bootScreenshots = [
 ];
 
 export function bootScreenshotById(id) {
-  return bootScreenshots.find((system) => system.id === id);
+  return bootScreenshots.find((system) => system.id === id)
+    ?? bootScreenshots.flatMap((system) => system.variants ?? []).find((variant) => variant.id === id);
+}
+
+export function bootScreenshotTargets() {
+  return bootScreenshots.flatMap((system) => [
+    system,
+    ...(system.variants ?? []).map((variant) => ({
+      ...variant,
+      group: system.group,
+      href: system.href,
+      parentId: system.id,
+      parentName: system.name,
+    })),
+  ]);
 }

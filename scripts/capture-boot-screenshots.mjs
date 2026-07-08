@@ -3,23 +3,25 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { bootScreenshots } from '../src/data/boot-screenshots.js';
+import { bootScreenshotTargets } from '../src/data/boot-screenshots.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const siteRoot = resolve(__dirname, '..');
 const sourceRoot = resolve(process.env.EMU198X_SOURCE_ROOT ?? join(siteRoot, '..', 'Emu198x'));
 const outputRoot = join(siteRoot, 'public', 'media', 'boot');
 const tempRoot = join(siteRoot, '.tmp', 'boot-screenshot-scripts');
+const bootTargets = bootScreenshotTargets();
 
 const options = parseArgs(process.argv.slice(2));
 const selected = options.only.size > 0
-  ? bootScreenshots.filter((system) => options.only.has(system.id))
-  : bootScreenshots;
+  ? bootTargets.filter((system) => options.only.has(system.id) || options.only.has(system.parentId))
+  : bootTargets;
 
 if (options.list) {
-  for (const system of bootScreenshots) {
+  for (const system of bootTargets) {
     const media = system.capture.mediaEnv ? ` media=${system.capture.mediaEnv}` : '';
-    console.log(`${system.id.padEnd(24)} ${system.capture.package}${media}`);
+    const parent = system.parentName ? ` (${system.parentName})` : '';
+    console.log(`${system.id.padEnd(24)} ${system.capture.package}${media}${parent}`);
   }
   process.exit(0);
 }

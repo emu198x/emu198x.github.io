@@ -2,16 +2,24 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import BaseLayout from '@layouts/BaseLayout.astro';
-import { bootScreenshots } from '../../data/boot-screenshots.js';
+import { bootScreenshotTargets, bootScreenshots } from '../../data/boot-screenshots.js';
 
 const publicPath = (path) => join(process.cwd(), 'public', path.replace(/^\//, ''));
 const withAvailability = bootScreenshots.map((system) => ({
   ...system,
   hasImage: existsSync(publicPath(system.image)),
+  variants: (system.variants ?? []).map((variant) => ({
+    ...variant,
+    hasImage: existsSync(publicPath(variant.image)),
+  })),
 }));
 
-const capturedCount = withAvailability.filter((system) => system.hasImage).length;
-const mediaPendingCount = withAvailability.filter((system) => !system.hasImage && system.capture.mediaEnv).length;
+const allTargets = bootScreenshotTargets().map((target) => ({
+  ...target,
+  hasImage: existsSync(publicPath(target.image)),
+}));
+const capturedCount = allTargets.filter((system) => system.hasImage).length;
+const mediaPendingCount = allTargets.filter((system) => !system.hasImage && system.capture.mediaEnv).length;
 ---
 
 <BaseLayout title="System Matrix" description="Current Emu198x system support matrix.">
@@ -29,8 +37,8 @@ const mediaPendingCount = withAvailability.filter((system) => !system.hasImage &
 
     <section class="stat-grid" aria-label="Boot screenshot summary">
       <div class="stat"><strong>{capturedCount}</strong><span>boot screenshots captured</span></div>
-      <div class="stat"><strong>{withAvailability.length}</strong><span>supported systems tracked</span></div>
-      <div class="stat"><strong>{mediaPendingCount}</strong><span>waiting on cartridge media</span></div>
+      <div class="stat"><strong>{allTargets.length}</strong><span>boot targets tracked</span></div>
+      <div class="stat"><strong>{mediaPendingCount}</strong><span>waiting on local media</span></div>
     </section>
 
     <section class="panel">
@@ -59,6 +67,20 @@ const mediaPendingCount = withAvailability.filter((system) => !system.hasImage &
                 <h3><a href={system.href}>{system.name}</a></h3>
               </div>
               <p>{system.caption}</p>
+              {system.variants.length > 0 && (
+                <div class="variant-strip" aria-label={`${system.name} variant boot captures`}>
+                  {system.variants.map((variant) => (
+                    <a class="variant-thumb" href={system.href} title={variant.caption}>
+                      {variant.hasImage ? (
+                        <img src={variant.image} alt={`${variant.name} boot screenshot`} loading="lazy" decoding="async" />
+                      ) : (
+                        <span>{variant.name}</span>
+                      )}
+                      <strong>{variant.name}</strong>
+                    </a>
+                  ))}
+                </div>
+              )}
             </div>
           </article>
         ))}
@@ -69,8 +91,8 @@ const mediaPendingCount = withAvailability.filter((system) => !system.hasImage &
       <h2>Capture automation</h2>
       <p>
         Screenshots are generated from the emulator source checkout with
-        {' '}<code>npm run capture:screenshots</code>. Cartridge-only systems are
-        skipped until their media environment variable is set locally.
+        {' '}<code>npm run capture:screenshots</code>. Media-dependent targets
+        are skipped until their environment variable is set locally.
       </p>
       <div class="table-wrap">
         <table>
@@ -86,6 +108,16 @@ const mediaPendingCount = withAvailability.filter((system) => !system.hasImage &
           </tbody>
         </table>
       </div>
+    </section>
+
+    <section class="panel">
+      <h2>Software captures next</h2>
+      <p>
+        The same capture path can add software galleries without changing the
+        public layout: games, demos, applications, and programming workflows can
+        be captured from local media variables and shown alongside the relevant
+        system or family.
+      </p>
     </section>
   </main>
 </BaseLayout>
@@ -209,6 +241,50 @@ const mediaPendingCount = withAvailability.filter((system) => !system.hasImage &
   .boot-card-copy p:last-child {
     margin: 0;
     line-height: 1.45;
+  }
+
+  .variant-strip {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
+    gap: 0.55rem;
+    margin-top: 0.2rem;
+  }
+
+  .variant-thumb {
+    display: grid;
+    gap: 0.4rem;
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .variant-thumb img,
+  .variant-thumb span {
+    width: 100%;
+    aspect-ratio: 4 / 3;
+    border-radius: 4px;
+    background: #14161b;
+    color: #d5dae3;
+    object-fit: contain;
+    image-rendering: pixelated;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  .variant-thumb span {
+    display: grid;
+    place-items: center;
+    padding: 0.5rem;
+    font-size: 0.72rem;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+
+  .variant-thumb strong {
+    min-width: 0;
+    color: var(--ink-muted);
+    font-size: 0.78rem;
+    line-height: 1.25;
   }
 
   .table-wrap {
