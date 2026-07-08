@@ -2,7 +2,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import BaseLayout from '@layouts/BaseLayout.astro';
-import { captureKindLabels, captureTargets, bootScreenshots } from '../../data/boot-screenshots.js';
+import { captureKindLabels, captureTargets } from '../../data/boot-screenshots.js';
 
 const publicPath = (path) => join(process.cwd(), 'public', path.replace(/^\//, ''));
 const captureKindOrder = Object.keys(captureKindLabels);
@@ -10,26 +10,16 @@ const allTargets = captureTargets().map((target) => ({
   ...target,
   hasImage: existsSync(publicPath(target.image)),
 }));
-const targetsById = new Map(allTargets.map((target) => [target.id, target]));
-const withAvailability = bootScreenshots.map((system) => {
-  const primaryTarget = targetsById.get(system.id);
-  const systemTargets = allTargets.filter((target) => target.systemId === system.id);
-  return {
-    ...system,
-    ...primaryTarget,
-    variants: systemTargets.filter((target) => target.variantId),
-    captures: systemTargets,
-    captureCounts: captureKindOrder
-      .map((kind) => ({
-        kind,
-        label: captureKindLabels[kind],
-        total: systemTargets.filter((target) => target.kind === kind).length,
-        captured: systemTargets.filter((target) => target.kind === kind && target.hasImage).length,
-      }))
-      .filter((item) => item.total > 0),
-    pendingMediaCount: systemTargets.filter((target) => !target.hasImage && target.capture.mediaEnv).length,
-  };
-});
+const captureName = (target) => target.variantName
+  ? `${target.systemName}: ${target.variantName}`
+  : target.systemName;
+const captureSections = captureKindOrder
+  .map((kind) => ({
+    kind,
+    label: captureKindLabels[kind],
+    targets: allTargets.filter((target) => target.kind === kind),
+  }))
+  .filter((section) => section.targets.length > 0);
 
 const capturedCount = allTargets.filter((target) => target.hasImage).length;
 const mediaPendingCount = allTargets.filter((target) => !target.hasImage && target.capture.mediaEnv).length;
@@ -67,42 +57,44 @@ const catalogRows = [...allTargets].sort((left, right) => (
         </div>
         <a href="/accuracy/">Accuracy progress</a>
       </div>
-      <div class="boot-grid">
-        {withAvailability.map((system) => (
-          <article class="boot-card">
-            <a class="frame" href={system.href} aria-label={`${system.name} system docs`}>
-              {system.hasImage ? (
-                <img src={system.image} alt={`${system.name} boot screenshot`} loading="lazy" decoding="async" />
-              ) : (
-                <span>
-                  {system.capture.mediaEnv ? `${system.capture.mediaEnv}` : 'Capture pending'}
-                </span>
-              )}
-            </a>
-            <div class="boot-card-copy">
-              <div>
-                <p class="tier">{system.group}</p>
-                <h3><a href={system.href}>{system.name}</a></h3>
-              </div>
-              <p>{system.caption}</p>
-              <div class="capture-counts" aria-label={`${system.name} capture counts`}>
-                {system.captureCounts.map((item) => (
-                  <span>
-                    <strong>{item.captured}</strong>
-                    {' '}
-                    {item.captured === item.total ? item.label : `${item.label} / ${item.total}`}
-                  </span>
-                ))}
-              </div>
-              {(system.variants.length > 0 || system.pendingMediaCount > 0) && (
-                <p class="coverage-note">
-                  {system.variants.length > 0 && `${system.variants.length} variants tracked`}
-                  {system.variants.length > 0 && system.pendingMediaCount > 0 && ' · '}
-                  {system.pendingMediaCount > 0 && `${system.pendingMediaCount} media-gated captures pending`}
-                </p>
-              )}
+      <div class="capture-sections">
+        {captureSections.map((section) => (
+          <section class="capture-section" aria-labelledby={`capture-${section.kind}`}>
+            <div class="capture-section-heading">
+              <h3 id={`capture-${section.kind}`}>{section.label}</h3>
+              <span>
+                {section.targets.filter((target) => target.hasImage).length}
+                {' / '}
+                {section.targets.length}
+                {' published'}
+              </span>
             </div>
-          </article>
+            <div class="capture-grid">
+              {section.targets.map((target) => (
+                <article class="capture-card">
+                  <a class="frame" href={target.href} aria-label={`${captureName(target)} system docs`}>
+                    {target.hasImage ? (
+                      <img src={target.image} alt={`${target.title} screenshot`} loading="lazy" decoding="async" />
+                    ) : (
+                      <span>
+                        {target.capture.mediaEnv ? `${target.capture.mediaEnv}` : 'Capture pending'}
+                      </span>
+                    )}
+                  </a>
+                  <div class="capture-card-copy">
+                    <div>
+                      <p class="tier">{target.group}</p>
+                      <h4><a href={target.href}>{captureName(target)}</a></h4>
+                    </div>
+                    <p>{target.caption}</p>
+                    <p class={target.hasImage ? 'capture-state published' : 'capture-state pending'}>
+                      {target.hasImage ? 'Published capture' : target.capture.mediaEnv ? 'Waiting on local media' : 'Capture pending'}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
         ))}
       </div>
     </section>
@@ -199,19 +191,6 @@ const catalogRows = [...allTargets].sort((left, right) => (
     white-space: nowrap;
   }
 
-  .boot-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-    gap: 1rem;
-  }
-
-  .boot-card {
-    overflow: hidden;
-    border-radius: var(--radius);
-    background: var(--paper-strong);
-    box-shadow: inset 0 0 0 1px var(--line), var(--shadow-sm);
-  }
-
   .frame {
     display: grid;
     min-height: 164px;
@@ -241,7 +220,50 @@ const catalogRows = [...allTargets].sort((left, right) => (
     text-align: center;
   }
 
-  .boot-card-copy {
+  .capture-sections {
+    display: grid;
+    gap: 1.5rem;
+  }
+
+  .capture-section {
+    min-width: 0;
+  }
+
+  .capture-section-heading {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .capture-section-heading h3 {
+    margin: 0;
+    color: var(--ink);
+    font-size: 1.25rem;
+  }
+
+  .capture-section-heading span {
+    color: var(--ink-soft);
+    font-size: 0.86rem;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+
+  .capture-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 1rem;
+  }
+
+  .capture-card {
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--paper-strong);
+    box-shadow: inset 0 0 0 1px var(--line), var(--shadow-sm);
+  }
+
+  .capture-card-copy {
     display: grid;
     gap: 0.65rem;
     padding: 1rem;
@@ -256,47 +278,38 @@ const catalogRows = [...allTargets].sort((left, right) => (
     text-transform: uppercase;
   }
 
-  h3 {
+  h4 {
     margin: 0;
     font-size: 1.05rem;
     line-height: 1.25;
   }
 
-  .boot-card-copy p {
+  .capture-card-copy p {
     margin: 0;
     line-height: 1.45;
   }
 
-  .capture-counts {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 0.45rem;
-    min-width: 0;
-  }
-
-  .capture-counts span {
+  .capture-state {
     display: inline-flex;
     min-height: 30px;
     align-items: center;
-    gap: 0.35rem;
+    width: fit-content;
     border-radius: 999px;
     padding: 0.25rem 0.65rem;
-    background: rgba(22, 101, 52, 0.1);
     color: var(--ink-muted);
     font-size: 0.78rem;
     font-weight: 650;
     line-height: 1.25;
+  }
+
+  .capture-state.published {
+    background: rgba(22, 101, 52, 0.1);
     box-shadow: inset 0 0 0 1px rgba(22, 101, 52, 0.2);
   }
 
-  .capture-counts strong {
-    color: var(--ink);
-    font-variant-numeric: tabular-nums;
-  }
-
-  .coverage-note {
-    color: var(--ink-muted);
-    font-size: 0.86rem;
+  .capture-state.pending {
+    background: rgba(198, 63, 49, 0.08);
+    box-shadow: inset 0 0 0 1px rgba(198, 63, 49, 0.18);
   }
 
   .table-wrap {
@@ -325,7 +338,13 @@ const catalogRows = [...allTargets].sort((left, right) => (
       flex-direction: column;
     }
 
-    .boot-grid {
+    .capture-section-heading {
+      align-items: start;
+      flex-direction: column;
+      gap: 0.35rem;
+    }
+
+    .capture-grid {
       grid-template-columns: 1fr;
     }
   }
