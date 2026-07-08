@@ -8,7 +8,7 @@ const systems = [
     status: 'Strong',
     progress: 86,
     evidence: 'Z80 oracles green; 262/262 runtime tests; 8/8 boot goldens',
-    next: 'Strict Spectron PNG comparison; Scorpion screen rendering',
+    next: 'Strict visual-oracle comparison for supported variants; Scorpion screen rendering',
     href: '/docs/systems/sinclair/zx-spectrum/',
   },
   {
@@ -261,6 +261,72 @@ const totals = {
   extended: systems.filter((system) => system.group === 'Extended').length,
   average: Math.round(systems.reduce((sum, system) => sum + system.progress, 0) / systems.length),
 };
+
+const sourceTiers = [
+  {
+    tier: '1',
+    label: 'Real hardware capture',
+    description: 'Digital capture from an original machine. This is the strongest visual source when geometry, timing, and capture conditions are known.',
+  },
+  {
+    tier: '2',
+    label: 'Hardware-validated test image',
+    description: 'A test ROM or program with reference output verified against real silicon, such as acid tests or emulator test-suite screenshots.',
+  },
+  {
+    tier: '3',
+    label: 'Reference emulator capture',
+    description: 'A capture from a mature emulator with version and configuration recorded. This proves agreement with that emulator, not final accuracy by itself.',
+  },
+  {
+    tier: '4',
+    label: 'Emu198x golden',
+    description: 'A self-minted regression image. Useful for detecting drift, but not enough to settle whether the rendering is correct.',
+  },
+];
+
+const referenceSources = [
+  {
+    system: 'ZX Spectrum family',
+    primary: 'Spectron for 16K, 48K, 128K, and Timex TC2048; FUSE and ZEsarUX for broader Spectrum-family coverage.',
+    notes: 'Spectron does not cover every Emu198x Spectrum variant, so +2/+2A/+2B/+3, Pentagon, Scorpion, TC2068, and TS2068 need FUSE, ZEsarUX, or hardware-backed captures.',
+  },
+  {
+    system: 'Commodore 64',
+    primary: 'VICE and VICE testprogs, including suites with real-hardware reference screenshots.',
+    notes: 'Best fit for VIC-II, CIA, SID, IEC, and drive-path comparisons.',
+  },
+  {
+    system: 'Nintendo NES / Sega VDP systems',
+    primary: 'Mesen or ares for emulator captures; Blargg-style and 240p-style test ROMs where applicable.',
+    notes: 'Use test ROM result channels where possible; use screenshots for PPU/VDP presentation and timing evidence.',
+  },
+  {
+    system: 'Nintendo Game Boy',
+    primary: 'SameBoy plus hardware-validated suites such as dmg-acid2, cgb-acid2, and mealybug-tearoom.',
+    notes: 'This is the cleanest first tier-2 visual wave because reference images are commonly shipped with the tests.',
+  },
+  {
+    system: 'Commodore Amiga',
+    primary: 'FS-UAE, WinUAE, and vAmiga depending on chipset and workflow.',
+    notes: 'Workbench and game captures need model, Kickstart, RAM, chipset, and disk configuration recorded.',
+  },
+  {
+    system: 'Dragon / CoCo',
+    primary: 'XRoar, plus real-hardware or published screenshots where available.',
+    notes: 'Already useful for Dragon software and display-path cross-checks.',
+  },
+  {
+    system: 'TMS9918-family machines',
+    primary: 'openMSX, blueMSX, or ares for MSX1, ColecoVision, SG-1000, Sord M5, Einstein, and SVI-328.',
+    notes: 'Treat this as a chip-keyed source: one VDP oracle strategy covers several systems.',
+  },
+  {
+    system: 'Atari 2600 / 8-bit / 7800',
+    primary: 'Stella for TIA, Altirra for Atari 8-bit, and A7800 or ares for 7800-oriented checks.',
+    notes: 'Use cartridge-specific captures only with local media and clear provenance.',
+  },
+];
 ---
 
 <BaseLayout title="Accuracy Progress" description="Fleet-wide Emu198x accuracy progress across supported systems.">
@@ -323,6 +389,59 @@ const totals = {
       </div>
     </section>
 
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Visual sources</p>
+          <h2>What counts as evidence</h2>
+        </div>
+      </div>
+      <p>
+        Screenshot comparisons are only meaningful when the source is labelled.
+        Emu198x treats screenshots as evidence about the digital framebuffer:
+        pixel geometry, timing, and rendered content. Palette choices and CRT
+        effects are documented separately.
+      </p>
+      <div class="tier-grid">
+        {sourceTiers.map((source) => (
+          <article class="tier-card">
+            <strong>Tier {source.tier}</strong>
+            <h3>{source.label}</h3>
+            <p>{source.description}</p>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="panel">
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Reference candidates</p>
+          <h2>Comparison sources by family</h2>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Family</th>
+              <th>Reference source</th>
+              <th>Notes</th>
+            </tr>
+          </thead>
+          <tbody>
+            {referenceSources.map((source) => (
+              <tr>
+                <td>{source.system}</td>
+                <td>{source.primary}</td>
+                <td>{source.notes}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </section>
+
     <section class="notes">
       <h2>How to read this</h2>
       <p>
@@ -333,6 +452,11 @@ const totals = {
       <p>
         The score is a summary of visible evidence, not a compatibility
         guarantee. Follow the system links for the detail behind each row.
+      </p>
+      <p>
+        When sources disagree, the closest source to real hardware wins.
+        Lower-tier disagreements remain useful, but they are tracked as
+        adjudication work rather than silently replacing a golden image.
       </p>
     </section>
   </main>
@@ -392,6 +516,43 @@ const totals = {
     white-space: nowrap;
   }
 
+  .panel > p {
+    max-width: 880px;
+    margin-top: 0;
+    line-height: 1.55;
+  }
+
+  .tier-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 0.75rem;
+    margin-top: 1rem;
+  }
+
+  .tier-card {
+    border-radius: var(--radius);
+    padding: 1rem;
+    background: var(--paper-strong);
+    box-shadow: inset 0 0 0 1px var(--line);
+  }
+
+  .tier-card strong {
+    color: var(--accent-strong);
+    font-size: 0.78rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .tier-card h3 {
+    margin: 0.35rem 0 0.5rem;
+    font-size: 1rem;
+  }
+
+  .tier-card p {
+    margin: 0;
+    line-height: 1.45;
+  }
+
   .table-wrap {
     overflow-x: auto;
   }
@@ -404,6 +565,11 @@ const totals = {
   td:nth-child(5),
   td:nth-child(6) {
     min-width: 280px;
+  }
+
+  .panel:nth-of-type(4) td:nth-child(2),
+  .panel:nth-of-type(4) td:nth-child(3) {
+    min-width: 320px;
   }
 
   .status {
