@@ -4,15 +4,15 @@ import DocLayout from '@layouts/DocLayout.astro';
 
 <DocLayout
   title="Getting Started"
-  description="What you can run today in Emu198x, how to build it from source, and where screenshots, ROMs, media, scripts, and MCP fit."
+  description="How to download Emu198x releases, build from source when needed, and understand where screenshots, ROMs, media, scripts, and MCP fit."
 >
   <h1>Getting started</h1>
 
   <p>
-    Emu198x is a Rust emulator workspace. The practical entry point today is a
-    source checkout and a per-system binary such as <code>emu198x-spectrum</code>,{' '}
-    <code>emu198x-c64</code>, or <code>emu198x-amiga</code>. There is no planned
-    unified CLI launcher; choose the machine you want to run.
+    Emu198x ships per-system binaries through GitHub Releases. Download the
+    archive for the machine and platform you want, or build the same per-system
+    binary from source when developing locally. There is no planned unified CLI
+    launcher; choose the machine you want to run.
   </p>
 
   <p>
@@ -21,6 +21,34 @@ import DocLayout from '@layouts/DocLayout.astro';
     emulator screenshots or workflows, but this documentation is about running
     and inspecting Emu198x itself.
   </p>
+
+  <h2>Download a release</h2>
+
+  <p>
+    Start at <a href="https://github.com/emu198x/emu198x/releases">GitHub
+    Releases</a>. Release archives are produced for the primary native verifier
+    shells: <code>emu198x-spectrum</code>, <code>emu198x-c64</code>,{' '}
+    <code>emu198x-amiga</code>, <code>emu198x-dragon</code>,{' '}
+    <code>emu198x-game-boy</code>, and <code>emu198x-nes</code>. Archives are
+    built for macOS Apple Silicon, macOS Intel, Linux x86_64, and Windows
+    x86_64.
+  </p>
+
+  <p>
+    Pick the archive matching both the system and your operating system, unpack
+    it, then run the binary directly. The examples below use
+    {' '}<code>cargo run</code> because they also work from a source checkout;
+    with a release archive, use the unpacked binary name instead:
+  </p>
+
+  <pre><code># Source checkout form
+cargo run --release -p emu198x-nes --no-default-features -- \
+  --rom game.nes \
+  --frames 300 \
+  --screenshot nes.png
+
+# Release archive form
+./emu198x-nes --rom game.nes --frames 300 --screenshot nes.png</code></pre>
 
   <h2>What can I run today?</h2>
 
@@ -42,8 +70,10 @@ import DocLayout from '@layouts/DocLayout.astro';
   <h2>Build from source</h2>
 
   <p>
-    Install a current stable Rust toolchain, clone the emulator repository, and
-    build the specific binary you want:
+    Source builds are useful for development, checking unreleased changes, or
+    working with systems outside the primary release set. Install a current
+    stable Rust toolchain, clone the emulator repository, and build the specific
+    binary you want:
   </p>
 
   <pre><code>git clone https://github.com/emu198x/emu198x.git
