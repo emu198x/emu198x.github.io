@@ -3,17 +3,17 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="Docs" description="Public Emu198x documentation index.">
-  <main class="container docs-index">
+  <main class="container docs-index" data-pagefind-body>
     <p class="eyebrow">Public docs</p>
     <h1>Documentation</h1>
-    <div class="link-grid">
-      <a href="/docs/changelog/">Changelog</a>
-      <a href="/docs/status/current-system-usability/">Current usability matrix</a>
-      <a href="/accuracy/">Accuracy progress</a>
-      <a href="/docs/systems/">Fleet index</a>
-      <a href="/docs/features/mcp/">MCP integration</a>
-      <a href="/docs/features/scripting/">Scripting</a>
-      <a href="/docs/features/capture/">Capture</a>
+    <div class="link-grid" data-pagefind-ignore>
+      <a href="/docs/changelog/">Changelog</a>{' '}
+      <a href="/docs/status/current-system-usability/">Current usability matrix</a>{' '}
+      <a href="/accuracy/">Accuracy progress</a>{' '}
+      <a href="/docs/systems/">Fleet index</a>{' '}
+      <a href="/docs/features/mcp/">MCP integration</a>{' '}
+      <a href="/docs/features/scripting/">Scripting</a>{' '}
+      <a href="/docs/features/capture/">Capture</a>{' '}
       <a href="/docs/features/observability/">Observability</a>
     </div>
   </main>

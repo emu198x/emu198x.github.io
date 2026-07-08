@@ -8,14 +8,18 @@ const nav = [
 ];
 ---
 
-<header class="site-header">
+<header class="site-header" data-pagefind-ignore>
   <div class="container header-inner">
     <a class="brand" href="/" aria-label="Emu198x home">
       <span class="mark" aria-hidden="true">E</span>
       <span>Emu198x</span>
     </a>
     <nav aria-label="Primary navigation">
-      {nav.map((item) => <a href={item.href}>{item.label}</a>)}
+      {nav.map((item) => (
+        <>
+          <a href={item.href}>{item.label}</a>{' '}
+        </>
+      ))}
     </nav>
   </div>
 </header>

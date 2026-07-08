@@ -11,16 +11,16 @@ const { title, description } = Astro.props;
 
 <BaseLayout title={title} description={description}>
   <main class="doc-shell container">
-    <aside class="doc-nav" aria-label="Documentation sections">
-      <a href="/docs/changelog/">Changelog</a>
-      <a href="/docs/status/current-system-usability/">Usability Matrix</a>
-      <a href="/docs/systems/">Fleet Index</a>
-      <a href="/docs/features/mcp/">MCP</a>
-      <a href="/docs/features/scripting/">Scripting</a>
-      <a href="/docs/features/capture/">Capture</a>
+    <aside class="doc-nav" aria-label="Documentation sections" data-pagefind-ignore>
+      <a href="/docs/changelog/">Changelog</a>{' '}
+      <a href="/docs/status/current-system-usability/">Usability Matrix</a>{' '}
+      <a href="/docs/systems/">Fleet Index</a>{' '}
+      <a href="/docs/features/mcp/">MCP</a>{' '}
+      <a href="/docs/features/scripting/">Scripting</a>{' '}
+      <a href="/docs/features/capture/">Capture</a>{' '}
       <a href="/docs/features/observability/">Observability</a>
     </aside>
-    <article class="doc-content">
+    <article class="doc-content" data-pagefind-body>
       <slot />
     </article>
   </main>

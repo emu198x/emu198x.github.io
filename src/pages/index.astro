@@ -3,7 +3,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 ---
 
 <BaseLayout title="Emu198x" description="A public evidence site for the Emu198x multi-system emulator suite.">
-  <main>
+  <main data-pagefind-body>
     <section class="hero">
       <div class="container hero-grid">
         <div class="hero-copy">
@@ -15,7 +15,7 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             documentation.
           </p>
           <div class="actions">
-            <a class="button primary" href="/accuracy/">Accuracy progress</a>
+            <a class="button primary" href="/accuracy/">Accuracy progress</a>{' '}
             <a class="button secondary" href="/systems/">System matrix</a>
           </div>
         </div>
