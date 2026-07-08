@@ -1,0 +1,229 @@
+---
+import BaseLayout from '@layouts/BaseLayout.astro';
+---
+
+<BaseLayout
+  title="Downloads"
+  description="Download Emu198x release archives and choose the right per-system emulator binary."
+>
+  <main class="container downloads" data-pagefind-body>
+    <p class="eyebrow">Releases</p>
+    <h1>Download Emu198x</h1>
+
+    <section class="intro">
+      <p class="lede">
+        Emu198x ships per-system binaries through GitHub Releases. Pick the
+        archive for the machine and operating system you want, unpack it, then
+        run that binary directly.
+      </p>
+      <div class="actions" data-pagefind-ignore>
+        <a class="button primary" href="https://github.com/emu198x/emu198x/releases/latest">
+          Latest release
+        </a>{' '}
+        <a class="button secondary" href="https://github.com/emu198x/emu198x/releases">
+          All releases
+        </a>{' '}
+        <a class="button secondary" href="/docs/getting-started/">
+          Getting started
+        </a>
+      </div>
+    </section>
+
+    <section class="download-grid" aria-label="Release contents">
+      <article>
+        <h2>Released binaries</h2>
+        <p>
+          The primary release archives are built for the native verifier shells:
+        </p>
+        <ul class="binary-list">
+          <li><code>emu198x-spectrum</code> — ZX Spectrum family</li>
+          <li><code>emu198x-c64</code> — Commodore 64</li>
+          <li><code>emu198x-amiga</code> — Commodore Amiga</li>
+          <li><code>emu198x-dragon</code> — Dragon 32</li>
+          <li><code>emu198x-game-boy</code> — Nintendo Game Boy</li>
+          <li><code>emu198x-nes</code> — Nintendo NES</li>
+        </ul>
+      </article>
+
+      <article>
+        <h2>Platforms</h2>
+        <p>
+          Release archives are produced for the current desktop targets:
+        </p>
+        <table>
+          <thead>
+            <tr>
+              <th>Platform</th>
+              <th>Target</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>macOS Apple Silicon</td>
+              <td><code>aarch64-apple-darwin</code></td>
+            </tr>
+            <tr>
+              <td>macOS Intel</td>
+              <td><code>x86_64-apple-darwin</code></td>
+            </tr>
+            <tr>
+              <td>Linux x86_64</td>
+              <td><code>x86_64-unknown-linux-gnu</code></td>
+            </tr>
+            <tr>
+              <td>Windows x86_64</td>
+              <td><code>x86_64-pc-windows-msvc</code></td>
+            </tr>
+          </tbody>
+        </table>
+      </article>
+    </section>
+
+    <section>
+      <h2>Release commands vs source commands</h2>
+      <p>
+        The documentation often uses <code>cargo run</code> because the same
+        command works from a source checkout. With a release archive, use the
+        unpacked binary name instead.
+      </p>
+
+      <pre><code># Source checkout form
+cargo run --release -p emu198x-nes --no-default-features -- \
+  --rom game.nes \
+  --frames 300 \
+  --screenshot nes.png
+
+# Release archive form
+./emu198x-nes --rom game.nes --frames 300 --screenshot nes.png</code></pre>
+    </section>
+
+    <section>
+      <h2>ROMs, firmware, and media</h2>
+      <p>
+        Emu198x does not ship commercial ROMs, firmware, disks, tapes, or
+        cartridges. You provide those yourself from hardware you own or another
+        legal source. Some systems can start from a cartridge or disk image;
+        others need a local firmware path before they can boot.
+      </p>
+    </section>
+
+    <section>
+      <h2>Build from source</h2>
+      <p>
+        Source builds are still the right path for development, unreleased
+        changes, and systems outside the primary release set. See the
+        {' '}<a href="/docs/getting-started/">getting started guide</a> for source
+        checkout examples.
+      </p>
+    </section>
+  </main>
+</BaseLayout>
+
+<style>
+  .downloads {
+    padding-block: 4rem;
+  }
+
+  h1 {
+    max-width: 920px;
+    margin: 0;
+    color: var(--ink);
+    font-size: clamp(3.2rem, 9vw, 7rem);
+    line-height: 0.9;
+  }
+
+  h2 {
+    margin-top: 0;
+    color: var(--ink);
+    font-size: clamp(1.5rem, 3vw, 2.1rem);
+    line-height: 1.08;
+  }
+
+  section {
+    margin-top: 3rem;
+  }
+
+  .intro {
+    max-width: 860px;
+  }
+
+  .lede {
+    margin: 1.35rem 0 0;
+    font-size: clamp(1.15rem, 2vw, 1.42rem);
+    line-height: 1.5;
+  }
+
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin-top: 1.6rem;
+  }
+
+  .button {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    padding: 0 1rem;
+    font-weight: 700;
+    text-decoration: none;
+  }
+
+  .primary {
+    background: var(--accent);
+    color: white;
+  }
+
+  .secondary {
+    background: var(--panel);
+    color: var(--ink);
+    box-shadow: inset 0 0 0 1px var(--line-strong);
+  }
+
+  .download-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.05fr);
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .download-grid article {
+    min-width: 0;
+  }
+
+  .binary-list {
+    margin-bottom: 0;
+    padding-left: 1.2rem;
+  }
+
+  .binary-list li {
+    margin-top: 0.55rem;
+  }
+
+  p,
+  li {
+    color: var(--ink-muted);
+    font-size: 1.02rem;
+    line-height: 1.7;
+  }
+
+  @media (hover: hover) and (pointer: fine) {
+    .primary:hover {
+      background: var(--accent-strong);
+      color: white;
+    }
+
+    .secondary:hover {
+      background: var(--paper-strong);
+      color: var(--accent-strong);
+    }
+  }
+
+  @media (max-width: 820px) {
+    .download-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>
