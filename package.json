@@ -7,6 +7,7 @@
     "dev": "node scripts/sync-public-docs.mjs && astro dev",
     "build": "node scripts/sync-public-docs.mjs && astro build && node scripts/check-rendered-spacing.mjs && npx pagefind --site dist",
     "check:spacing": "node scripts/check-rendered-spacing.mjs",
+    "capture:screenshots": "node scripts/capture-boot-screenshots.mjs",
     "preview": "astro preview",
     "sync": "node scripts/sync-public-docs.mjs"
   },

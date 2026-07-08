@@ -1,5 +1,5 @@
 dist/
 .astro/
+.tmp/
 node_modules/
 src/content/docs/
-

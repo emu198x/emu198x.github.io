@@ -1,23 +1,17 @@
 ---
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import BaseLayout from '@layouts/BaseLayout.astro';
+import { bootScreenshots } from '../../data/boot-screenshots.js';
 
-const primary = [
-  ['ZX Spectrum', 'Playable, 11 variants', 'Window + Capture + Script + MCP'],
-  ['Commodore 64', 'Fully functional verifier shell', 'Window + Capture + Script + MCP'],
-  ['Nintendo NES', 'SMB renders; 135/155 sweep', 'Window + Capture + Script + MCP'],
-  ['Commodore Amiga', 'Workbench 3.1 boots', 'Window + Capture + Script + MCP'],
-  ['Nintendo Game Boy', 'DMG verifier', 'Window + Capture + Script + MCP'],
-  ['Dragon 32', 'Boots BASIC', 'Window + Capture + Script + MCP'],
-];
+const publicPath = (path) => join(process.cwd(), 'public', path.replace(/^\//, ''));
+const withAvailability = bootScreenshots.map((system) => ({
+  ...system,
+  hasImage: existsSync(publicPath(system.image)),
+}));
 
-const extended = [
-  ['Atari 800XL', 'BASIC READY; types'],
-  ['MSX1', 'MSX BASIC prompt'],
-  ['Sega Master System', 'Alex Kidd title'],
-  ['Commodore VIC-20', 'READY; PRG autoload'],
-  ['Tatung Einstein', 'MOS prompt; types'],
-  ['Oric Atmos', 'BASIC Ready; types'],
-];
+const capturedCount = withAvailability.filter((system) => system.hasImage).length;
+const mediaPendingCount = withAvailability.filter((system) => !system.hasImage && system.capture.mediaEnv).length;
 ---
 
 <BaseLayout title="System Matrix" description="Current Emu198x system support matrix.">
@@ -28,34 +22,70 @@ const extended = [
       <p>
         Emu198x separates support into capability surfaces. Primary systems have
         native windows; extended systems are headless but scriptable and
-        MCP-driven. Accuracy progress is tracked separately for every supported
-        system.
+        MCP-driven. This page shows repeatable boot captures for every supported
+        system as they become available.
       </p>
     </header>
 
-    <section class="panel">
-      <h2>Primary systems</h2>
-      <table>
-        <thead><tr><th>System</th><th>Boot today</th><th>Surface</th></tr></thead>
-        <tbody>
-          {primary.map(([system, boot, surface]) => <tr><td>{system}</td><td>{boot}</td><td>{surface}</td></tr>)}
-        </tbody>
-      </table>
+    <section class="stat-grid" aria-label="Boot screenshot summary">
+      <div class="stat"><strong>{capturedCount}</strong><span>boot screenshots captured</span></div>
+      <div class="stat"><strong>{withAvailability.length}</strong><span>supported systems tracked</span></div>
+      <div class="stat"><strong>{mediaPendingCount}</strong><span>waiting on cartridge media</span></div>
     </section>
 
     <section class="panel">
-      <h2>Extended examples</h2>
-      <table>
-        <thead><tr><th>System</th><th>Boot today</th><th>Surface</th></tr></thead>
-        <tbody>
-          {extended.map(([system, boot]) => <tr><td>{system}</td><td>{boot}</td><td>Capture + Script + MCP</td></tr>)}
-        </tbody>
-      </table>
+      <div class="panel-heading">
+        <div>
+          <p class="eyebrow">Boot gallery</p>
+          <h2>Current boot captures</h2>
+        </div>
+        <a href="/accuracy/">Accuracy progress</a>
+      </div>
+      <div class="boot-grid">
+        {withAvailability.map((system) => (
+          <article class="boot-card">
+            <a class="frame" href={system.href} aria-label={`${system.name} system docs`}>
+              {system.hasImage ? (
+                <img src={system.image} alt={`${system.name} boot screenshot`} loading="lazy" decoding="async" />
+              ) : (
+                <span>
+                  {system.capture.mediaEnv ? `${system.capture.mediaEnv}` : 'Capture pending'}
+                </span>
+              )}
+            </a>
+            <div class="boot-card-copy">
+              <div>
+                <p class="tier">{system.group}</p>
+                <h3><a href={system.href}>{system.name}</a></h3>
+              </div>
+              <p>{system.caption}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2>Capture automation</h2>
       <p>
-        The full fleet index is available in the mirrored{' '}
-        <a href="/docs/systems/">system docs</a>; the fleet-wide evidence view is
-        on <a href="/accuracy/">Accuracy progress</a>.
+        Screenshots are generated from the emulator source checkout with
+        {' '}<code>npm run capture:screenshots</code>. Cartridge-only systems are
+        skipped until their media environment variable is set locally.
       </p>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>System</th><th>Capture package</th><th>Media</th></tr></thead>
+          <tbody>
+            {withAvailability.map((system) => (
+              <tr>
+                <td><a href={system.href}>{system.name}</a></td>
+                <td><code>{system.capture.package}</code></td>
+                <td>{system.capture.mediaEnv ? <code>{system.capture.mediaEnv}</code> : 'Firmware boot'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </section>
   </main>
 </BaseLayout>
@@ -66,7 +96,7 @@ const extended = [
   }
 
   header {
-    max-width: 840px;
+    max-width: 880px;
   }
 
   h1 {
@@ -80,6 +110,10 @@ const extended = [
     line-height: 1.55;
   }
 
+  .stat-grid {
+    margin-top: 2rem;
+  }
+
   .panel {
     margin-top: 2rem;
     border-radius: var(--radius);
@@ -88,7 +122,117 @@ const extended = [
     box-shadow: inset 0 0 0 1px var(--line), var(--shadow-sm);
   }
 
+  .panel-heading {
+    display: flex;
+    align-items: end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .panel-heading h2,
   h2 {
-    margin-top: 0;
+    margin: 0;
+  }
+
+  .panel-heading a {
+    display: inline-flex;
+    min-height: 44px;
+    align-items: center;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+
+  .boot-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+    gap: 1rem;
+  }
+
+  .boot-card {
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--paper-strong);
+    box-shadow: inset 0 0 0 1px var(--line), var(--shadow-sm);
+  }
+
+  .frame {
+    display: grid;
+    min-height: 164px;
+    aspect-ratio: 4 / 3;
+    place-items: center;
+    overflow: hidden;
+    background: #14161b;
+    color: #d5dae3;
+    text-decoration: none;
+  }
+
+  .frame img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+
+  .frame span {
+    max-width: 18ch;
+    padding: 0.75rem;
+    color: #d5dae3;
+    font-family: var(--font-mono);
+    font-size: 0.78rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+    text-align: center;
+  }
+
+  .boot-card-copy {
+    display: grid;
+    gap: 0.65rem;
+    padding: 1rem;
+  }
+
+  .tier {
+    margin: 0 0 0.2rem;
+    color: var(--accent-strong);
+    font-size: 0.72rem;
+    font-weight: 750;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h3 {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.25;
+  }
+
+  .boot-card-copy p:last-child {
+    margin: 0;
+    line-height: 1.45;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  td:first-child,
+  th:first-child {
+    min-width: 180px;
+  }
+
+  td:nth-child(2),
+  td:nth-child(3) {
+    min-width: 220px;
+  }
+
+  @media (max-width: 760px) {
+    .panel-heading {
+      align-items: start;
+      flex-direction: column;
+    }
+
+    .boot-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>
