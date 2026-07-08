@@ -1,0 +1,142 @@
+---
+import DocLayout from '@layouts/DocLayout.astro';
+---
+
+<DocLayout
+  title="Getting Started"
+  description="What you can run today in Emu198x, how to build it from source, and where screenshots, ROMs, media, scripts, and MCP fit."
+>
+  <h1>Getting started</h1>
+
+  <p>
+    Emu198x is a Rust emulator workspace. The practical entry point today is a
+    source checkout and a per-system binary such as <code>emu198x-spectrum</code>,{' '}
+    <code>emu198x-c64</code>, or <code>emu198x-amiga</code>. There is no planned
+    unified CLI launcher; choose the machine you want to run.
+  </p>
+
+  <p>
+    This is the emulator project. <a href="https://code198x.com">Code Like It's
+    198x</a> is the separate teaching site in the wider 198x family. It may use
+    emulator screenshots or workflows, but this documentation is about running
+    and inspecting Emu198x itself.
+  </p>
+
+  <h2>What can I run today?</h2>
+
+  <p>
+    Start with one of the primary systems if you want the most complete
+    experience: ZX Spectrum, Commodore 64, Nintendo NES, Commodore Amiga,
+    Nintendo Game Boy, or Dragon 32. Those are the best places to try windowed
+    use, screenshots, scripted runs, and MCP-driven inspection.
+  </p>
+
+  <p>
+    Extended systems are useful for boot captures, scripting, and MCP work, but
+    many are still headless and some need local firmware or cartridge media.
+    The <a href="/systems/">system matrix</a> shows the current screenshot
+    evidence, and the <a href="/docs/status/current-system-usability/">usability
+    matrix</a> gives the deeper status notes.
+  </p>
+
+  <h2>Build from source</h2>
+
+  <p>
+    Install a current stable Rust toolchain, clone the emulator repository, and
+    build the specific binary you want:
+  </p>
+
+  <pre><code>git clone https://github.com/emu198x/emu198x.git
+cd emu198x
+cargo build --release -p emu198x-spectrum</code></pre>
+
+  <p>
+    During development, <code>cargo run --release -p PACKAGE -- ...</code> is
+    usually the simplest form. Use <code>--help</code> on a package before
+    assuming flags transfer exactly between systems.
+  </p>
+
+  <h2>ROMs and media</h2>
+
+  <p>
+    Emu198x does not ship commercial ROMs, firmware, disks, tapes, or
+    cartridges. You provide those yourself from hardware you own or another
+    legal source. The requirements differ by machine:
+  </p>
+
+  <ul>
+    <li>NES and Game Boy cartridge runs use the cartridge image you provide.</li>
+    <li>Commodore 64, Amiga, Dragon, MSX, and many extended systems need local firmware or ROM paths.</li>
+    <li>Screenshots and software smokes that depend on commercial media stay gated behind local paths.</li>
+  </ul>
+
+  <h2>First screenshot</h2>
+
+  <p>
+    A headless screenshot is the quickest smoke test because it does not require
+    the native window feature. For example, with an NES cartridge image:
+  </p>
+
+  <pre><code>cargo run --release -p emu198x-nes --no-default-features -- \
+  --rom game.nes \
+  --frames 300 \
+  --screenshot nes.png</code></pre>
+
+  <p>
+    For a firmware-based machine, pass the local ROM or firmware directory the
+    runner expects. A C64 disk autoload run looks like this:
+  </p>
+
+  <pre><code>cargo run --release -p emu198x-c64 -- \
+  --rom-dir ~/.emu198x/roms/commodore-c64 \
+  --disk game.d64 \
+  --autoload-disk</code></pre>
+
+  <h2>First windowed run</h2>
+
+  <p>
+    Primary systems with native windows can run without
+    {' '}<code>--no-default-features</code>. Cartridge-first machines are the easiest
+    examples:
+  </p>
+
+  <pre><code>cargo run --release -p emu198x-nes -- game.nes</code></pre>
+
+  <pre><code>cargo run --release -p emu198x-game-boy -- game.gb</code></pre>
+
+  <p>
+    For Amiga and C64, expect to point the runner at the right firmware and
+    media. For Spectrum tape work, use the ROM and tape/autoload flags:
+  </p>
+
+  <pre><code>cargo run --release -p emu198x-spectrum -- \
+  --rom 48.rom \
+  --tape game.tzx \
+  --autoload-tape</code></pre>
+
+  <h2>Where scripting and MCP fit</h2>
+
+  <p>
+    Scripts are for repeatable local automation: run frames, load media, press
+    keys, query state, and save screenshots or audio. MCP is the agent-facing
+    surface over the same kind of control and inspection model.
+  </p>
+
+  <p>
+    Use <a href="/docs/features/scripting/">scripting</a> when you want a file
+    you can run in CI or reuse locally. Use <a href="/docs/features/mcp/">MCP</a>{' '}
+    when an external tool or agent should drive the emulator over stdio. For
+    example:
+  </p>
+
+  <pre><code>cargo run --release -p emu198x-atari-800xl -- --mcp</code></pre>
+
+  <h2>Next places to look</h2>
+
+  <ul>
+    <li><a href="/systems/">System matrix</a> — current screenshots and capture targets.</li>
+    <li><a href="/accuracy/">Accuracy progress</a> — fleet-wide evidence and source standards.</li>
+    <li><a href="/docs/features/mcp/">MCP integration</a> — tool surface and query model.</li>
+    <li><a href="/docs/features/capture/">Capture</a> — screenshots, audio, and generated evidence.</li>
+  </ul>
+</DocLayout>
