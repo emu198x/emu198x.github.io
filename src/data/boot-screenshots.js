@@ -1,19 +1,17 @@
 const romRoot = '~/.emu198x/roms';
 
-const spectrumVariant = (id, name, machine, requiredFiles, maxFrames = 300, waitForBoot = true) => ({
+const spectrumVariant = (id, name, machine, requiredFiles, maxFrames = 300, caption = `${name} firmware boot capture.`) => ({
   id,
   name,
   image: `/media/boot/${id}.png`,
-  caption: `${name} firmware boot capture.`,
+  caption,
   capture: {
     package: 'emu198x-spectrum',
     mode: 'script',
     args: ['--script', '{script}'],
     script: [
       { action: 'set_machine', machine },
-      waitForBoot
-        ? { action: 'wait_for_boot', max_frames: maxFrames }
-        : { action: 'run_frames', frames: maxFrames },
+      { action: 'run_frames', frames: maxFrames },
       { action: 'save_screenshot', path: '{output}' },
     ],
     requiredFiles,
@@ -26,7 +24,7 @@ const spectrumVariants = [
   ]),
   spectrumVariant('zx-spectrum-plus', 'ZX Spectrum+', 'spectrum_plus', [
     `${romRoot}/sinclair-zx-spectrum-48k/48.rom`,
-  ]),
+  ], 300, 'ZX Spectrum+ fixed-frame boot capture. This model shares the 48K ROM.'),
   spectrumVariant('zx-spectrum-128k', 'ZX Spectrum 128', 'spectrum_128k', [
     `${romRoot}/sinclair-zx-spectrum-128k/128-0.rom`,
     `${romRoot}/sinclair-zx-spectrum-128k/128-1.rom`,
@@ -62,18 +60,18 @@ const spectrumVariants = [
     `${romRoot}/scorpion-zs256/scorpion-1.rom`,
     `${romRoot}/scorpion-zs256/scorpion-2.rom`,
     `${romRoot}/scorpion-zs256/scorpion-3.rom`,
-  ], 300, false),
+  ]),
   spectrumVariant('timex-tc2048', 'Timex TC2048', 'timex_tc2048', [
     `${romRoot}/timex-tc2048/tc2048.rom`,
   ]),
   spectrumVariant('timex-tc2068', 'Timex TC2068', 'timex_tc2068', [
     `${romRoot}/timex-ts2068/ts2068.rom`,
     `${romRoot}/timex-ts2068/exrom.rom`,
-  ], 300, false),
+  ]),
   spectrumVariant('timex-ts2068', 'Timex TS2068', 'timex_ts2068', [
     `${romRoot}/timex-ts2068/ts2068.rom`,
     `${romRoot}/timex-ts2068/exrom.rom`,
-  ], 300, false),
+  ]),
 ];
 
 const amigaVariant = (id, name, model, kickstart) => ({
