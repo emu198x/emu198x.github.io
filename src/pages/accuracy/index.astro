@@ -285,46 +285,98 @@ const sourceTiers = [
   },
 ];
 
+const comparisonRules = [
+  'Record the exact emulator, version or vendored snapshot, machine model, firmware, media, and command/configuration.',
+  'Treat source-available emulators as implementation references; treat binary-only emulators as verification runs, not code citations.',
+  'Prefer independent codebases. Downstream forks are useful for workflow checks, but they do not count as independent agreement.',
+  'Separate software-emulator agreement from signal-level FPGA agreement. Both are useful, but they answer different questions.',
+  'Use comparison captures to explain agreement or disagreement; do not replace real hardware or hardware-validated tests with emulator screenshots.',
+];
+
 const referenceSources = [
   {
     system: 'ZX Spectrum family',
-    primary: 'Spectron for 16K, 48K, 128K, and Timex TC2048; FUSE and ZEsarUX for broader Spectrum-family coverage.',
-    notes: 'Spectron does not cover every Emu198x Spectrum variant, so +2/+2A/+2B/+3, Pentagon, Scorpion, TC2068, and TS2068 need FUSE, ZEsarUX, or hardware-backed captures.',
+    primary: 'Fuse is the canonical broad FOSS reference. ZEsarUX is the readable contention cross-check.',
+    secondary: 'Spectron covers 16K, 48K, 128K, and TC2048. SpecIde, EightyOne, zxsp, and the MiSTer core are tie-breakers.',
+    status: 'Partial',
+    notes: 'Spectron is useful but not enough for +2/+2A/+2B/+3, Pentagon, Scorpion, TC2068, or TS2068. Those need Fuse, ZEsarUX, EightyOne, zxsp, MiSTer, or hardware-backed captures.',
   },
   {
     system: 'Commodore 64',
-    primary: 'VICE and VICE testprogs, including suites with real-hardware reference screenshots.',
-    notes: 'Best fit for VIC-II, CIA, SID, IEC, and drive-path comparisons.',
+    primary: 'VICE is the established reference and includes reSID for SID behaviour.',
+    secondary: 'VirtualC64, Frodo SC, Hoxs64, and the C64 MiSTer core give independent or signal-level checks.',
+    status: 'Strong',
+    notes: 'Best fit for VIC-II, CIA, SID, IEC, drive-path, and software corpus comparisons. Document disagreements instead of picking a silent winner.',
   },
   {
-    system: 'Nintendo NES / Sega VDP systems',
-    primary: 'Mesen or ares for emulator captures; Blargg-style and 240p-style test ROMs where applicable.',
-    notes: 'Use test ROM result channels where possible; use screenshots for PPU/VDP presentation and timing evidence.',
+    system: 'Nintendo NES',
+    primary: 'Mesen2 is the first software reference for NES and Famicom work.',
+    secondary: 'ares, fceux, nestopia, and the NES MiSTer core give second opinions and signal-level checks.',
+    status: 'Strong',
+    notes: 'Use test ROM result channels where possible; use screenshots for PPU presentation and timing evidence.',
   },
   {
     system: 'Nintendo Game Boy',
-    primary: 'SameBoy plus hardware-validated suites such as dmg-acid2, cgb-acid2, and mealybug-tearoom.',
-    notes: 'This is the cleanest first tier-2 visual wave because reference images are commonly shipped with the tests.',
+    primary: 'SameBoy is the local source-available reference for DMG, MGB, SGB, SGB2, CGB, and AGB modes.',
+    secondary: 'ares can be used as a multi-system second opinion where useful.',
+    status: 'Strong',
+    notes: 'Pair emulator comparisons with hardware-validated suites such as dmg-acid2, cgb-acid2, and mealybug-tearoom.',
   },
   {
     system: 'Commodore Amiga',
-    primary: 'FS-UAE, WinUAE, and vAmiga depending on chipset and workflow.',
-    notes: 'Workbench and game captures need model, Kickstart, RAM, chipset, and disk configuration recorded.',
+    primary: 'vAmiga first for readable OCS/ECS behaviour; WinUAE first for breadth and AGA.',
+    secondary: 'WinFellow is an independent OCS/ECS comparator. fs-uae is useful operationally but is downstream of WinUAE. Minimig-AGA MiSTer is the signal-level comparison.',
+    status: 'Partial',
+    notes: 'AGA-specific work is mostly WinUAE plus Minimig. Workbench and game captures must record model, Kickstart, RAM, chipset, and disk configuration.',
   },
   {
     system: 'Dragon / CoCo',
-    primary: 'XRoar, plus real-hardware or published screenshots where available.',
-    notes: 'Already useful for Dragon software and display-path cross-checks.',
+    primary: 'XRoar is the local source-available reference for Dragon 32/64 and Tandy CoCo 1/2/3.',
+    secondary: 'Real-hardware or published captures are the main tie-breakers when available.',
+    status: 'Usable',
+    notes: 'Already useful for Dragon software, 6809-family behaviour, and display-path cross-checks.',
   },
   {
     system: 'TMS9918-family machines',
-    primary: 'openMSX, blueMSX, or ares for MSX1, ColecoVision, SG-1000, Sord M5, Einstein, and SVI-328.',
-    notes: 'Treat this as a chip-keyed source: one VDP oracle strategy covers several systems.',
+    primary: 'ares is the local multi-system reference for MSX, ColecoVision, SG-1000, and related VDP/SN76489 paths.',
+    secondary: 'openMSX and blueMSX are good external candidates, but they are not currently vendored here.',
+    status: 'Partial',
+    notes: 'Treat this as a chip-keyed source: one VDP oracle strategy can cover MSX1, ColecoVision, SG-1000, Sord M5, Einstein, and SVI-328, but machine-specific firmware/media still matters.',
   },
   {
-    system: 'Atari 2600 / 8-bit / 7800',
-    primary: 'Stella for TIA, Altirra for Atari 8-bit, and A7800 or ares for 7800-oriented checks.',
-    notes: 'Use cartridge-specific captures only with local media and clear provenance.',
+    system: 'Atari 2600 / 8-bit / 5200 / 7800',
+    primary: 'Stella is the 2600 reference. Altirra is the Atari 8-bit and 5200 reference, paired with acid800 tests.',
+    secondary: 'Atari800 MiSTer and Atari7800 MiSTer provide signal-level checks. A7800 remains an external candidate for 7800 software-emulator comparison.',
+    status: 'Partial',
+    notes: '2600 and 8-bit coverage is strong; 7800 needs a better software-emulator comparison path. Use cartridge-specific captures only with local media and clear provenance.',
+  },
+  {
+    system: 'Commodore VIC-20 / PET',
+    primary: 'VICE covers VIC-20 and PET as well as C64.',
+    secondary: 'VIC20 MiSTer is available as a signal-level VIC-20 comparator.',
+    status: 'Usable',
+    notes: 'PET still needs a stronger independent comparison source or hardware-backed captures for model-specific behaviour.',
+  },
+  {
+    system: 'ZX80 / ZX81 / Jupiter Ace',
+    primary: 'EightyOne is the local broad reference for the ZX81, TS1000/1500, Jupiter Ace, and Spectrum-adjacent lineage.',
+    secondary: 'Primary-library timing references and hardware captures are needed for edge cases.',
+    status: 'Usable',
+    notes: 'Useful for boot and display comparisons, but still weaker than the Spectrum reference stack.',
+  },
+  {
+    system: 'Acorn Atom / Electron / BBC Micro',
+    primary: 'BBCMicro MiSTer is the only local BBC reference implementation.',
+    secondary: 'b2, BeebEm, and JSBeeb are external candidates; Atom and Electron need reference candidates chosen.',
+    status: 'Gap',
+    notes: 'Use the primary library and hardware-backed captures until software references are vendored or otherwise pinned.',
+  },
+  {
+    system: 'Oric / Memotech / Aquarius',
+    primary: 'No strong local reference-emulator set is currently vendored for these machines.',
+    secondary: 'MEMU-informed MTX work exists in Emu198x notes, but the public comparison source still needs to be pinned.',
+    status: 'Gap',
+    notes: 'Do not imply visual accuracy from Emu198x goldens alone. These need external reference selection or hardware-backed captures.',
   },
 ];
 ---
@@ -416,6 +468,26 @@ const referenceSources = [
     <section class="panel">
       <div class="panel-heading">
         <div>
+          <p class="eyebrow">Comparison policy</p>
+          <h2>What makes a comparison valid</h2>
+        </div>
+      </div>
+      <p>
+        A reference-emulator comparison is valid when the run can be repeated
+        and the source is honest about its limits. Agreement with a mature
+        emulator is useful evidence, but it is not the same thing as proof
+        against original hardware.
+      </p>
+      <ul class="rule-list">
+        {comparisonRules.map((rule) => (
+          <li>{rule}</li>
+        ))}
+      </ul>
+    </section>
+
+    <section class="panel reference-panel">
+      <div class="panel-heading">
+        <div>
           <p class="eyebrow">Reference candidates</p>
           <h2>Comparison sources by family</h2>
         </div>
@@ -425,7 +497,9 @@ const referenceSources = [
           <thead>
             <tr>
               <th>Family</th>
-              <th>Reference source</th>
+              <th>Primary reference</th>
+              <th>Secondary / tie-breakers</th>
+              <th>Coverage</th>
               <th>Notes</th>
             </tr>
           </thead>
@@ -434,6 +508,8 @@ const referenceSources = [
               <tr>
                 <td>{source.system}</td>
                 <td>{source.primary}</td>
+                <td>{source.secondary}</td>
+                <td><span class={`status reference-${source.status.toLowerCase()}`}>{source.status}</span></td>
                 <td>{source.notes}</td>
               </tr>
             ))}
@@ -553,6 +629,18 @@ const referenceSources = [
     line-height: 1.45;
   }
 
+  .rule-list {
+    max-width: 900px;
+    margin: 1rem 0 0;
+    padding-left: 1.2rem;
+  }
+
+  .rule-list li {
+    margin-top: 0.55rem;
+    color: var(--ink-muted);
+    line-height: 1.55;
+  }
+
   .table-wrap {
     overflow-x: auto;
   }
@@ -567,8 +655,9 @@ const referenceSources = [
     min-width: 280px;
   }
 
-  .panel:nth-of-type(4) td:nth-child(2),
-  .panel:nth-of-type(4) td:nth-child(3) {
+  .reference-panel td:nth-child(2),
+  .reference-panel td:nth-child(3),
+  .reference-panel td:nth-child(5) {
     min-width: 320px;
   }
 
@@ -582,6 +671,21 @@ const referenceSources = [
     color: var(--accent-strong);
     font-size: 0.85rem;
     font-weight: 700;
+  }
+
+  .reference-partial {
+    background: rgba(198, 63, 49, 0.1);
+    color: var(--signal);
+  }
+
+  .reference-usable {
+    background: rgba(35, 96, 162, 0.1);
+    color: #174a86;
+  }
+
+  .reference-gap {
+    background: rgba(23, 27, 33, 0.08);
+    color: var(--ink-muted);
   }
 
   .meter {
