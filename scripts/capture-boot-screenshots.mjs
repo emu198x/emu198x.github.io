@@ -3,14 +3,13 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { bootScreenshotTargets } from '../src/data/boot-screenshots.js';
+import { captureTargets } from '../src/data/boot-screenshots.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const siteRoot = resolve(__dirname, '..');
 const sourceRoot = resolve(process.env.EMU198X_SOURCE_ROOT ?? join(siteRoot, '..', 'Emu198x'));
-const outputRoot = join(siteRoot, 'public', 'media', 'boot');
 const tempRoot = join(siteRoot, '.tmp', 'boot-screenshot-scripts');
-const bootTargets = bootScreenshotTargets();
+const bootTargets = captureTargets();
 
 const options = parseArgs(process.argv.slice(2));
 const selected = options.only.size > 0
@@ -31,7 +30,6 @@ if (selected.length === 0) {
   process.exit(2);
 }
 
-mkdirSync(outputRoot, { recursive: true });
 mkdirSync(tempRoot, { recursive: true });
 
 let captured = 0;
@@ -39,7 +37,7 @@ let skipped = 0;
 let failed = 0;
 
 for (const system of selected) {
-  const output = join(outputRoot, `${system.id}.png`);
+  const output = join(siteRoot, 'public', system.image.replace(/^\//, ''));
   const capture = system.capture;
   const missing = missingInputs(capture);
   if (missing.length > 0) {
@@ -59,6 +57,7 @@ for (const system of selected) {
     continue;
   }
 
+  mkdirSync(dirname(output), { recursive: true });
   console.log(`capture ${system.id} -> ${relativeToSite(output)}`);
   const result = spawnSync('cargo', args, {
     cwd: sourceRoot,

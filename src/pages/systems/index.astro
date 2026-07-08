@@ -2,24 +2,42 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import BaseLayout from '@layouts/BaseLayout.astro';
-import { bootScreenshotTargets, bootScreenshots } from '../../data/boot-screenshots.js';
+import { captureKindLabels, captureTargets, bootScreenshots } from '../../data/boot-screenshots.js';
 
 const publicPath = (path) => join(process.cwd(), 'public', path.replace(/^\//, ''));
-const withAvailability = bootScreenshots.map((system) => ({
-  ...system,
-  hasImage: existsSync(publicPath(system.image)),
-  variants: (system.variants ?? []).map((variant) => ({
-    ...variant,
-    hasImage: existsSync(publicPath(variant.image)),
-  })),
-}));
-
-const allTargets = bootScreenshotTargets().map((target) => ({
+const captureKindOrder = Object.keys(captureKindLabels);
+const allTargets = captureTargets().map((target) => ({
   ...target,
   hasImage: existsSync(publicPath(target.image)),
 }));
-const capturedCount = allTargets.filter((system) => system.hasImage).length;
-const mediaPendingCount = allTargets.filter((system) => !system.hasImage && system.capture.mediaEnv).length;
+const targetsById = new Map(allTargets.map((target) => [target.id, target]));
+const withAvailability = bootScreenshots.map((system) => {
+  const primaryTarget = targetsById.get(system.id);
+  const systemTargets = allTargets.filter((target) => target.systemId === system.id);
+  return {
+    ...system,
+    ...primaryTarget,
+    variants: systemTargets.filter((target) => target.variantId),
+    captures: systemTargets,
+    captureCounts: captureKindOrder
+      .map((kind) => ({
+        kind,
+        label: captureKindLabels[kind],
+        total: systemTargets.filter((target) => target.kind === kind).length,
+        captured: systemTargets.filter((target) => target.kind === kind && target.hasImage).length,
+      }))
+      .filter((item) => item.total > 0),
+    pendingMediaCount: systemTargets.filter((target) => !target.hasImage && target.capture.mediaEnv).length,
+  };
+});
+
+const capturedCount = allTargets.filter((target) => target.hasImage).length;
+const mediaPendingCount = allTargets.filter((target) => !target.hasImage && target.capture.mediaEnv).length;
+const catalogRows = [...allTargets].sort((left, right) => (
+  left.systemName.localeCompare(right.systemName)
+  || (left.variantName ?? '').localeCompare(right.variantName ?? '')
+  || left.kind.localeCompare(right.kind)
+));
 ---
 
 <BaseLayout title="System Matrix" description="Current Emu198x system support matrix.">
@@ -30,22 +48,22 @@ const mediaPendingCount = allTargets.filter((system) => !system.hasImage && syst
       <p>
         Emu198x separates support into capability surfaces. Primary systems have
         native windows; extended systems are headless but scriptable and
-        MCP-driven. This page shows repeatable boot captures for every supported
-        system as they become available.
+        MCP-driven. This page shows repeatable captures for every supported
+        system as boot, BASIC, and software evidence becomes available.
       </p>
     </header>
 
-    <section class="stat-grid" aria-label="Boot screenshot summary">
-      <div class="stat"><strong>{capturedCount}</strong><span>boot screenshots captured</span></div>
-      <div class="stat"><strong>{allTargets.length}</strong><span>boot targets tracked</span></div>
+    <section class="stat-grid" aria-label="Screenshot summary">
+      <div class="stat"><strong>{capturedCount}</strong><span>captures published</span></div>
+      <div class="stat"><strong>{allTargets.length}</strong><span>targets tracked</span></div>
       <div class="stat"><strong>{mediaPendingCount}</strong><span>waiting on local media</span></div>
     </section>
 
     <section class="panel">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">Boot gallery</p>
-          <h2>Current boot captures</h2>
+          <p class="eyebrow">Capture gallery</p>
+          <h2>Current system captures</h2>
         </div>
         <a href="/accuracy/">Accuracy progress</a>
       </div>
@@ -67,19 +85,21 @@ const mediaPendingCount = allTargets.filter((system) => !system.hasImage && syst
                 <h3><a href={system.href}>{system.name}</a></h3>
               </div>
               <p>{system.caption}</p>
-              {system.variants.length > 0 && (
-                <div class="variant-strip" aria-label={`${system.name} variant boot captures`}>
-                  {system.variants.map((variant) => (
-                    <a class="variant-thumb" href={system.href} title={variant.caption}>
-                      {variant.hasImage ? (
-                        <img src={variant.image} alt={`${variant.name} boot screenshot`} loading="lazy" decoding="async" />
-                      ) : (
-                        <span>{variant.name}</span>
-                      )}
-                      <strong>{variant.name}</strong>
-                    </a>
-                  ))}
-                </div>
+              <div class="capture-counts" aria-label={`${system.name} capture counts`}>
+                {system.captureCounts.map((item) => (
+                  <span>
+                    <strong>{item.captured}</strong>
+                    {' '}
+                    {item.captured === item.total ? item.label : `${item.label} / ${item.total}`}
+                  </span>
+                ))}
+              </div>
+              {(system.variants.length > 0 || system.pendingMediaCount > 0) && (
+                <p class="coverage-note">
+                  {system.variants.length > 0 && `${system.variants.length} variants tracked`}
+                  {system.variants.length > 0 && system.pendingMediaCount > 0 && ' · '}
+                  {system.pendingMediaCount > 0 && `${system.pendingMediaCount} media-gated captures pending`}
+                </p>
               )}
             </div>
           </article>
@@ -88,7 +108,7 @@ const mediaPendingCount = allTargets.filter((system) => !system.hasImage && syst
     </section>
 
     <section class="panel">
-      <h2>Capture automation</h2>
+      <h2>Capture catalog</h2>
       <p>
         Screenshots are generated from the emulator source checkout with
         {' '}<code>npm run capture:screenshots</code>. Media-dependent targets
@@ -96,13 +116,17 @@ const mediaPendingCount = allTargets.filter((system) => !system.hasImage && syst
       </p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>System</th><th>Capture package</th><th>Media</th></tr></thead>
+          <thead><tr><th>System</th><th>Capture</th><th>Type</th><th>Media</th></tr></thead>
           <tbody>
-            {withAvailability.map((system) => (
+            {catalogRows.map((target) => (
               <tr>
-                <td><a href={system.href}>{system.name}</a></td>
-                <td><code>{system.capture.package}</code></td>
-                <td>{system.capture.mediaEnv ? <code>{system.capture.mediaEnv}</code> : 'Firmware boot'}</td>
+                <td><a href={target.href}>{target.variantName ? `${target.systemName}: ${target.variantName}` : target.systemName}</a></td>
+                <td>
+                  <span class="catalog-title">{target.title}</span>
+                  <code>{target.capture.package}</code>
+                </td>
+                <td>{captureKindLabels[target.kind] ?? target.kind}</td>
+                <td>{target.capture.mediaEnv ? <code>{target.capture.mediaEnv}</code> : 'Local firmware'}</td>
               </tr>
             ))}
           </tbody>
@@ -111,12 +135,12 @@ const mediaPendingCount = allTargets.filter((system) => !system.hasImage && syst
     </section>
 
     <section class="panel">
-      <h2>Software captures next</h2>
+      <h2>Next capture layers</h2>
       <p>
-        The same capture path can add software galleries without changing the
-        public layout: games, demos, applications, and programming workflows can
-        be captured from local media variables and shown alongside the relevant
-        system or family.
+        The capture model now separates boot, BASIC, and software evidence.
+        BASIC captures can use small Emu198x-authored programs, while software
+        captures can be added from local media variables and captioned with the
+        title, publisher, year, and capture context.
       </p>
     </section>
   </main>
@@ -238,66 +262,60 @@ const mediaPendingCount = allTargets.filter((system) => !system.hasImage && syst
     line-height: 1.25;
   }
 
-  .boot-card-copy p:last-child {
+  .boot-card-copy p {
     margin: 0;
     line-height: 1.45;
   }
 
-  .variant-strip {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(118px, 1fr));
-    gap: 0.55rem;
-    margin-top: 0.2rem;
-  }
-
-  .variant-thumb {
-    display: grid;
-    gap: 0.4rem;
+  .capture-counts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
     min-width: 0;
-    color: inherit;
-    text-decoration: none;
   }
 
-  .variant-thumb img,
-  .variant-thumb span {
-    width: 100%;
-    aspect-ratio: 4 / 3;
-    border-radius: 4px;
-    background: #14161b;
-    color: #d5dae3;
-    object-fit: contain;
-    image-rendering: pixelated;
-    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
-  }
-
-  .variant-thumb span {
-    display: grid;
-    place-items: center;
-    padding: 0.5rem;
-    font-size: 0.72rem;
-    line-height: 1.25;
-    overflow-wrap: anywhere;
-    text-align: center;
-  }
-
-  .variant-thumb strong {
-    min-width: 0;
+  .capture-counts span {
+    display: inline-flex;
+    min-height: 30px;
+    align-items: center;
+    gap: 0.35rem;
+    border-radius: 999px;
+    padding: 0.25rem 0.65rem;
+    background: rgba(22, 101, 52, 0.1);
     color: var(--ink-muted);
     font-size: 0.78rem;
+    font-weight: 650;
     line-height: 1.25;
+    box-shadow: inset 0 0 0 1px rgba(22, 101, 52, 0.2);
+  }
+
+  .capture-counts strong {
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+
+  .coverage-note {
+    color: var(--ink-muted);
+    font-size: 0.86rem;
   }
 
   .table-wrap {
     overflow-x: auto;
   }
 
+  .catalog-title {
+    display: block;
+    margin-bottom: 0.25rem;
+    font-weight: 650;
+  }
+
   td:first-child,
   th:first-child {
-    min-width: 180px;
+    min-width: 220px;
   }
 
   td:nth-child(2),
-  td:nth-child(3) {
+  td:nth-child(4) {
     min-width: 220px;
   }
 

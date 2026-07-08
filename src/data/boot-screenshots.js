@@ -1,10 +1,21 @@
 const romRoot = '~/.emu198x/roms';
 
+export const captureKindLabels = {
+  boot: 'Boot',
+  basic: 'BASIC',
+  software: 'Software',
+};
+
+const defaultRightsNote = 'Captured from locally supplied firmware or media. Emu198x does not distribute ROMs, disks, tapes, or cartridges.';
+
 const spectrumVariant = (id, name, machine, requiredFiles, maxFrames = 300, caption = `${name} firmware boot capture.`) => ({
   id,
   name,
+  kind: 'boot',
+  title: `${name} boot`,
   image: `/media/boot/${id}.png`,
   caption,
+  rightsNote: defaultRightsNote,
   capture: {
     package: 'emu198x-spectrum',
     mode: 'script',
@@ -77,8 +88,11 @@ const spectrumVariants = [
 const amigaVariant = (id, name, model, kickstart) => ({
   id,
   name,
+  kind: 'boot',
+  title: `${name} boot`,
   image: `/media/boot/${id}.png`,
   caption: `${name} Kickstart boot capture.`,
+  rightsNote: defaultRightsNote,
   capture: {
     package: 'emu198x-amiga',
     args: [
@@ -100,8 +114,11 @@ const amigaVariants = [
   {
     id: 'amiga-a1000',
     name: 'Amiga A1000',
+    kind: 'boot',
+    title: 'Amiga A1000 boot',
     image: '/media/boot/amiga-a1000.png',
     caption: 'A1000 bootstrap capture. Set EMU198X_BOOT_AMIGA_A1000_DISK to publish this image.',
+    rightsNote: defaultRightsNote,
     capture: {
       package: 'emu198x-amiga',
       args: [
@@ -134,10 +151,13 @@ export const bootScreenshots = [
   {
     id: 'zx-spectrum',
     name: 'ZX Spectrum',
+    kind: 'boot',
+    title: 'ZX Spectrum 48K boot',
     group: 'Primary',
     href: '/docs/systems/sinclair/zx-spectrum/',
     image: '/media/boot/zx-spectrum.png',
     caption: '48K BASIC copyright screen captured from the shared script harness.',
+    rightsNote: defaultRightsNote,
     capture: {
       package: 'emu198x-spectrum',
       mode: 'script',
@@ -152,10 +172,13 @@ export const bootScreenshots = [
   {
     id: 'commodore-c64',
     name: 'Commodore 64',
+    kind: 'boot',
+    title: 'Commodore 64 boot',
     group: 'Primary',
     href: '/docs/systems/commodore/c64/',
     image: '/media/boot/commodore-c64.png',
     caption: 'C64 BASIC READY prompt after the ROM boot sequence.',
+    rightsNote: defaultRightsNote,
     capture: {
       package: 'emu198x-c64',
       args: [
@@ -177,10 +200,13 @@ export const bootScreenshots = [
   {
     id: 'nes',
     name: 'Nintendo NES',
+    kind: 'boot',
+    title: 'Nintendo NES cartridge boot',
     group: 'Primary',
     href: '/docs/systems/nintendo/nes/',
     image: '/media/boot/nes.png',
     caption: 'Cartridge boot capture. Set EMU198X_BOOT_NES_ROM to publish this image.',
+    rightsNote: defaultRightsNote,
     capture: {
       package: 'emu198x-nes',
       args: ['--rom', '{media}', '--frames', '300', '--screenshot', '{output}'],
@@ -191,10 +217,13 @@ export const bootScreenshots = [
   {
     id: 'commodore-amiga',
     name: 'Commodore Amiga',
+    kind: 'boot',
+    title: 'Commodore Amiga boot',
     group: 'Primary',
     href: '/docs/systems/commodore/amiga/',
     image: '/media/boot/commodore-amiga.png',
     caption: 'A500 Kickstart 1.3 insert-disk screen.',
+    rightsNote: defaultRightsNote,
     capture: {
       package: 'emu198x-amiga',
       args: [
@@ -604,19 +633,34 @@ export const bootScreenshots = [
 ];
 
 export function bootScreenshotById(id) {
-  return bootScreenshots.find((system) => system.id === id)
-    ?? bootScreenshots.flatMap((system) => system.variants ?? []).find((variant) => variant.id === id);
+  return captureTargets().find((target) => target.id === id);
 }
 
 export function bootScreenshotTargets() {
+  return captureTargets();
+}
+
+export function captureTargets() {
   return bootScreenshots.flatMap((system) => [
-    system,
-    ...(system.variants ?? []).map((variant) => ({
-      ...variant,
-      group: system.group,
-      href: system.href,
-      parentId: system.id,
-      parentName: system.name,
-    })),
+    normalizeCaptureTarget(system),
+    ...(system.variants ?? []).map((variant) => normalizeCaptureTarget(variant, system)),
   ]);
+}
+
+function normalizeCaptureTarget(target, parent) {
+  const kind = target.kind ?? 'boot';
+  return {
+    ...target,
+    kind,
+    title: target.title ?? `${target.name} ${captureKindLabels[kind]?.toLowerCase() ?? 'capture'}`,
+    group: target.group ?? parent?.group,
+    href: target.href ?? parent?.href,
+    systemId: parent?.id ?? target.systemId ?? target.id,
+    systemName: parent?.name ?? target.systemName ?? target.name,
+    variantId: parent ? target.id : target.variantId,
+    variantName: parent ? target.name : target.variantName,
+    parentId: parent?.id,
+    parentName: parent?.name,
+    rightsNote: target.rightsNote ?? defaultRightsNote,
+  };
 }
