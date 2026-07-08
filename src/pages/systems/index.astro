@@ -108,17 +108,22 @@ const catalogRows = [...allTargets].sort((left, right) => (
       </p>
       <div class="table-wrap">
         <table>
-          <thead><tr><th>System</th><th>Capture</th><th>Type</th><th>Media</th></tr></thead>
+          <thead><tr><th>System</th><th>Capture</th><th>Type</th><th>Source</th><th>Evidence</th></tr></thead>
           <tbody>
             {catalogRows.map((target) => (
               <tr>
                 <td><a href={target.href}>{target.variantName ? `${target.systemName}: ${target.variantName}` : target.systemName}</a></td>
                 <td>
                   <span class="catalog-title">{target.title}</span>
-                  <code>{target.capture.package}</code>
+                  <code>{target.provenance.runner}</code>
                 </td>
                 <td>{captureKindLabels[target.kind] ?? target.kind}</td>
-                <td>{target.capture.mediaEnv ? <code>{target.capture.mediaEnv}</code> : 'Local firmware'}</td>
+                <td>{target.provenance.source}</td>
+                <td>
+                  <span class="catalog-title">{target.provenance.intent}</span>
+                  <code>{target.provenance.output}</code>
+                  <span class="rights-note">{target.provenance.rightsNote}</span>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -328,8 +333,17 @@ const catalogRows = [...allTargets].sort((left, right) => (
   }
 
   td:nth-child(2),
-  td:nth-child(4) {
+  td:nth-child(4),
+  td:nth-child(5) {
     min-width: 220px;
+  }
+
+  .rights-note {
+    display: block;
+    margin-top: 0.35rem;
+    color: var(--ink-soft);
+    font-size: 0.84rem;
+    line-height: 1.45;
   }
 
   @media (max-width: 760px) {

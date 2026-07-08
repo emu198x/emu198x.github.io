@@ -649,6 +649,7 @@ export function captureTargets() {
 
 function normalizeCaptureTarget(target, parent) {
   const kind = target.kind ?? 'boot';
+  const rightsNote = target.rightsNote ?? defaultRightsNote;
   return {
     ...target,
     kind,
@@ -661,6 +662,30 @@ function normalizeCaptureTarget(target, parent) {
     variantName: parent ? target.name : target.variantName,
     parentId: parent?.id,
     parentName: parent?.name,
-    rightsNote: target.rightsNote ?? defaultRightsNote,
+    rightsNote,
+    provenance: {
+      intent: target.intent ?? target.caption,
+      source: target.source ?? captureSource(target),
+      runner: target.capture.package,
+      output: target.image,
+      rightsNote,
+    },
   };
+}
+
+function captureSource(target) {
+  const requiredFiles = target.capture.requiredFiles?.length ?? 0;
+
+  if (target.capture.mediaEnv) {
+    const mediaSource = `${target.capture.mediaLabel ?? 'Local media'} via ${target.capture.mediaEnv}`;
+    return requiredFiles > 0
+      ? `${mediaSource}; local firmware or ROM files (${requiredFiles})`
+      : mediaSource;
+  }
+
+  if (requiredFiles > 0) {
+    return `Local firmware or ROM files (${requiredFiles})`;
+  }
+
+  return 'No external media recorded';
 }
