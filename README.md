@@ -2,10 +2,10 @@
 
 Public website and documentation for Emu198x.
 
-The site is built with Astro. Public Markdown is synchronized from
-`emu198x/emu198x` at build time.
+The site is built with Astro. Public Markdown is synchronized from the sibling
+`emu198x` source repo at build time.
 
 ```sh
-EMU198X_SOURCE_ROOT=../Emu198x npm run build
+EMU198X_SOURCE_ROOT=../emu198x npm run build
 ```
 
