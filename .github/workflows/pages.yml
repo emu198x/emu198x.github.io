@@ -21,16 +21,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Check out site
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       - name: Check out Emu198x source docs
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           repository: emu198x/emu198x
           path: emu198x-source
 
       - name: Set up Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: 24
           cache: npm
@@ -44,7 +44,7 @@ jobs:
           EMU198X_SOURCE_ROOT: ${{ github.workspace }}/emu198x-source
 
       - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+        uses: actions/upload-pages-artifact@v5
         with:
           path: dist
 
@@ -58,4 +58,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v4
+        uses: actions/deploy-pages@v5
