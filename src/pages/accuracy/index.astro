@@ -4,13 +4,24 @@ import { loadSiteData } from '@lib/site-data.js';
 
 const { fleet, evidence } = loadSiteData();
 
-const rows = fleet.map((entry) => ({
-  entry,
-  evidence: evidence.get(entry.machineId),
-  boot: entry.captures.find((capture) => capture.kind === 'boot') ?? null,
-}));
+const rows = fleet.map((entry) => {
+  const boot = entry.captures.find((capture) => capture.kind === 'boot') ?? null;
+  const bootLabel = boot?.hasImage
+    ? 'Yes'
+    : boot
+      ? (boot.capture?.mediaEnv ? 'Waiting on local media' : 'Capture pending')
+      : 'No capture yet';
+  return {
+    entry,
+    evidence: evidence.get(entry.machineId),
+    boot,
+    bootLabel,
+  };
+});
 
-const capturedCount = rows.filter((row) => row.boot).length;
+// A boot capture record is not a boot capture that exists — see hasImage in
+// boot-screenshots.js. Only images that actually exist count here.
+const capturedCount = rows.filter((row) => row.boot?.hasImage).length;
 const uncapturedCount = rows.length - capturedCount;
 
 const sourceTiers = [
@@ -179,12 +190,12 @@ const referenceSources = [
             </tr>
           </thead>
           <tbody>
-            {rows.map(({ entry, evidence, boot }) => (
+            {rows.map(({ entry, evidence, bootLabel }) => (
               <tr>
                 <td><a href={`/systems/${entry.machineId}/`}>{entry.machineId}</a></td>
                 <td>{evidence.ownCrates}</td>
                 <td>{evidence.sharedCrates}</td>
-                <td>{boot ? 'Yes' : 'No capture yet'}</td>
+                <td>{bootLabel}</td>
                 <td><a href={evidence.issuesUrl}>Open issues</a></td>
                 <td><a href={evidence.milestoneUrl}>Milestone</a></td>
               </tr>

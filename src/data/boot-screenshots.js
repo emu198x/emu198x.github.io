@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
 const romRoot = '~/.emu198x/roms';
 
 export const captureKindLabels = {
@@ -5,6 +8,16 @@ export const captureKindLabels = {
   basic: 'BASIC',
   software: 'Software',
 };
+
+// A record here is an intended capture, not evidence one happened — eight of
+// them are mediaEnv-gated on local ROMs/disks the visitor does not have, and
+// have no image file. hasImage is computed once, here, in the normalizer
+// every capture record passes through (top-level and each variant alike),
+// so no page can render an <img>, count a capture, or print a rights note
+// for a capture that never ran.
+function publicImagePath(image) {
+  return join(process.cwd(), 'public', image.replace(/^\//, ''));
+}
 
 const defaultRightsNote = 'Captured from locally supplied firmware or media. Emu198x does not distribute ROMs, disks, tapes, or cartridges.';
 
@@ -652,10 +665,14 @@ export function captureTargets() {
 
 export function normalizeCaptureTarget(target, parent) {
   const kind = target.kind ?? 'boot';
-  const rightsNote = target.rightsNote ?? defaultRightsNote;
+  const hasImage = existsSync(publicImagePath(target.image));
+  // A rights note asserts a capture happened. Never carry one for a record
+  // whose image doesn't exist — that record is an intent, not evidence.
+  const rightsNote = hasImage ? (target.rightsNote ?? defaultRightsNote) : null;
   return {
     ...target,
     kind,
+    hasImage,
     title: target.title ?? `${target.name} ${captureKindLabels[kind]?.toLowerCase() ?? 'capture'}`,
     group: target.group ?? parent?.group,
     systemId: parent?.id ?? target.systemId ?? target.id,

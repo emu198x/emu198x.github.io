@@ -45,12 +45,16 @@ export function loadSiteData() {
     );
   }
 
-  // rightsNote is guaranteed by normalizeCaptureTarget's default, but a
-  // capture reaching the page without one must fail loudly, not render an
-  // empty note silently — see the imagery-rights decision.
+  // rightsNote is guaranteed by normalizeCaptureTarget's default whenever a
+  // capture has an image, but a capture that *has* an image and reaches the
+  // page without a note must fail loudly, not render an empty note silently
+  // — see the imagery-rights decision. A capture with no image correctly
+  // carries no rightsNote (see hasImage in boot-screenshots.js): asserting
+  // rights over a capture that never ran would be the same kind of false
+  // claim, just phrased as a note instead of an image.
   for (const entry of fleet) {
     for (const capture of entry.captures) {
-      if (!capture.rightsNote) {
+      if (capture.hasImage && !capture.rightsNote) {
         throw new Error(`site-data: ${entry.machineId} capture ${capture.id} has no rightsNote`);
       }
     }

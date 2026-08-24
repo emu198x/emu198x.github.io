@@ -1,20 +1,23 @@
 ---
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { loadSiteData } from '../../lib/site-data.js';
 
-const publicPath = (path) => join(process.cwd(), 'public', path.replace(/^\//, ''));
-
 const { fleet } = loadSiteData();
 
+// hasImage is computed once, at the model layer (boot-screenshots.js's
+// normalizer), never re-derived here — a capture record and a capture that
+// exists are two different states. A record with no image is "waiting on
+// media", which is a different, equally honest state from "no record at
+// all" (amstrad-cpc, sega-game-gear): never collapse the two into one label.
 const cards = fleet.map((entry) => {
   const capture = entry.captures[0] ?? null;
-  const hasImage = capture ? existsSync(publicPath(capture.image)) : false;
-  return { entry, capture, hasImage };
+  const hasImage = capture?.hasImage ?? false;
+  const state = !capture ? 'none' : hasImage ? 'captured' : 'waiting';
+  const pendingLabel = capture?.capture?.mediaEnv ? 'Waiting on local media' : 'Capture pending';
+  return { entry, capture, hasImage, state, pendingLabel };
 });
 
-const capturedCount = cards.filter((card) => card.capture).length;
+const capturedCount = cards.filter((card) => card.state === 'captured').length;
 const uncapturedCount = cards.length - capturedCount;
 
 // Some machines cover more than one hardware variant, each with its own
@@ -55,7 +58,7 @@ const variantRows = fleet.flatMap((entry) => {
         <a href="/accuracy/">Accuracy progress</a>
       </div>
       <div class="capture-grid">
-        {cards.map(({ entry, capture, hasImage }) => (
+        {cards.map(({ entry, capture, hasImage, state, pendingLabel }) => (
           <article class="capture-card">
             <a
               class="frame"
@@ -70,7 +73,7 @@ const variantRows = fleet.flatMap((entry) => {
                   decoding="async"
                 />
               ) : (
-                <span>{capture ? capture.caption : 'No capture yet'}</span>
+                <span>{capture ? pendingLabel : 'No capture yet'}</span>
               )}
             </a>
             <div class="capture-card-copy">
@@ -78,8 +81,10 @@ const variantRows = fleet.flatMap((entry) => {
                 <p class="tier">{entry.crate}</p>
                 <h3><a href={`/systems/${entry.machineId}/`}>{entry.machineId}</a></h3>
               </div>
-              {capture && <p class="rights-note">{capture.rightsNote}</p>}
-              <p class="capture-state">{capture ? 'Capture available' : 'No capture yet'}</p>
+              {hasImage && <p class="rights-note">{capture.rightsNote}</p>}
+              <p class="capture-state">
+                {state === 'captured' ? 'Capture available' : state === 'waiting' ? pendingLabel : 'No capture yet'}
+              </p>
             </div>
           </article>
         ))}
@@ -114,9 +119,13 @@ const variantRows = fleet.flatMap((entry) => {
                 <tr>
                   <td><a href={`/systems/${machineId}/`}>{machineId}</a></td>
                   <td>{variant.name}</td>
-                  <td>{variant.title}</td>
+                  <td>{variant.hasImage ? variant.title : `${variant.title} (waiting on local media)`}</td>
                   <td>{variant.provenance.source}</td>
-                  <td class="rights-note-cell">{variant.rightsNote}</td>
+                  <td class="rights-note-cell">
+                    {variant.hasImage
+                      ? variant.rightsNote
+                      : 'No capture yet — waiting on local media, so there is nothing to assert rights over.'}
+                  </td>
                 </tr>
               ))}
             </tbody>
