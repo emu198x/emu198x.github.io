@@ -10,10 +10,13 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const siteRoot = dirname(fileURLToPath(import.meta.url)).replace(/\/scripts$/, '');
-const defaultSourceRoot = existsSync(join(siteRoot, 'docs'))
-  ? siteRoot
-  : join(siteRoot, '..', 'Emu198x');
-const sourceRoot = resolve(process.env.EMU198X_SOURCE_ROOT ?? defaultSourceRoot);
+// Must match site-data.js's sourceRoot() exactly — two readers disagreeing on
+// where the flagship lives only worked by accident, on case-insensitive
+// macOS, where '../Emu198x' and '../emu198x' resolve to the same inode. On
+// Linux CI they are different paths. There is also no local-repo fallback
+// here on purpose: a heuristic that can silently source the changelog from
+// this repo instead of the flagship is worse than failing loudly below.
+const sourceRoot = resolve(process.env.EMU198X_SOURCE_ROOT ?? join(siteRoot, '..', 'emu198x'));
 const destRoot = join(siteRoot, 'src', 'content', 'docs');
 
 // This used to copy five more paths — docs/systems, docs/status/current-
