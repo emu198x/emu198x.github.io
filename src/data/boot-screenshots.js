@@ -678,7 +678,7 @@ export function captureTargets() {
   ]);
 }
 
-function normalizeCaptureTarget(target, parent) {
+export function normalizeCaptureTarget(target, parent) {
   const kind = target.kind ?? 'boot';
   const rightsNote = target.rightsNote ?? defaultRightsNote;
   return {

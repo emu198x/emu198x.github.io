@@ -16,6 +16,15 @@ const cards = fleet.map((entry) => {
 
 const capturedCount = cards.filter((card) => card.capture).length;
 const uncapturedCount = cards.length - capturedCount;
+
+// Some machines cover more than one hardware variant, each with its own
+// capture and its own rights note — read per-machine from the fleet entry,
+// never re-driven from the site's flat capture list.
+const variantRows = fleet.flatMap((entry) => {
+  const capture = entry.captures[0];
+  if (!capture) return [];
+  return (capture.variants ?? []).map((variant) => ({ machineId: entry.machineId, variant }));
+});
 ---
 
 <BaseLayout title="System Matrix" description="Current Emu198x system support matrix.">
@@ -69,13 +78,52 @@ const uncapturedCount = cards.length - capturedCount;
                 <p class="tier">{entry.crate}</p>
                 <h3><a href={`/systems/${entry.machineId}/`}>{entry.machineId}</a></h3>
               </div>
-              {capture?.rightsNote && <p class="rights-note">{capture.rightsNote}</p>}
+              {capture && <p class="rights-note">{capture.rightsNote}</p>}
               <p class="capture-state">{capture ? 'Capture available' : 'No capture yet'}</p>
             </div>
           </article>
         ))}
       </div>
     </section>
+
+    {variantRows.length > 0 && (
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Variant catalogue</p>
+            <h2>Machine variants with their own capture</h2>
+          </div>
+        </div>
+        <p>
+          Some machines in the registry cover more than one hardware variant,
+          each captured and rights-noted separately.
+        </p>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Machine variants and their captures">
+          <table>
+            <thead>
+              <tr>
+                <th>Machine</th>
+                <th>Variant</th>
+                <th>Capture</th>
+                <th>Source</th>
+                <th>Rights note</th>
+              </tr>
+            </thead>
+            <tbody>
+              {variantRows.map(({ machineId, variant }) => (
+                <tr>
+                  <td><a href={`/systems/${machineId}/`}>{machineId}</a></td>
+                  <td>{variant.name}</td>
+                  <td>{variant.title}</td>
+                  <td>{variant.provenance.source}</td>
+                  <td class="rights-note-cell">{variant.rightsNote}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    )}
   </main>
 </BaseLayout>
 
@@ -220,6 +268,17 @@ const uncapturedCount = cards.length - capturedCount;
     display: block;
     color: var(--ink-soft);
     font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .table-wrap {
+    overflow-x: auto;
+  }
+
+  .rights-note-cell {
+    min-width: 260px;
+    color: var(--ink-soft);
+    font-size: 0.86rem;
     line-height: 1.45;
   }
 
