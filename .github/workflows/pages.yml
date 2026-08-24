@@ -43,6 +43,15 @@ jobs:
         env:
           EMU198X_SOURCE_ROOT: ${{ github.workspace }}/emu198x-source
 
+      # Between building and publishing, because a page that fails WCAG AA is
+      # not one to deploy. Every route, both themes — roughly half the defects
+      # this caught when it was first run existed in exactly one of them.
+      - name: Install the browser the sweep drives
+        run: npx playwright install --with-deps chromium
+
+      - name: Check accessibility
+        run: npm run a11y
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v5
         with:
