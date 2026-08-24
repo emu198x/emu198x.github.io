@@ -10,6 +10,7 @@ const defaultRightsNote = 'Captured from locally supplied firmware or media. Emu
 
 const spectrumVariant = (id, name, machine, requiredFiles, maxFrames = 300, caption = `${name} firmware boot capture.`) => ({
   id,
+  machineId: 'sinclair-zx-spectrum',
   name,
   kind: 'boot',
   title: `${name} boot`,
@@ -87,6 +88,7 @@ const spectrumVariants = [
 
 const amigaVariant = (id, name, model, kickstart) => ({
   id,
+  machineId: 'commodore-amiga',
   name,
   kind: 'boot',
   title: `${name} boot`,
@@ -113,6 +115,7 @@ const amigaVariant = (id, name, model, kickstart) => ({
 const amigaVariants = [
   {
     id: 'amiga-a1000',
+    machineId: 'commodore-amiga',
     name: 'Amiga A1000',
     kind: 'boot',
     title: 'Amiga A1000 boot',
@@ -150,6 +153,7 @@ const amigaVariants = [
 export const bootScreenshots = [
   {
     id: 'zx-spectrum',
+    machineId: 'sinclair-zx-spectrum',
     name: 'ZX Spectrum',
     kind: 'boot',
     title: 'ZX Spectrum 48K boot',
@@ -171,6 +175,7 @@ export const bootScreenshots = [
   },
   {
     id: 'commodore-c64',
+    machineId: 'commodore-c64',
     name: 'Commodore 64',
     kind: 'boot',
     title: 'Commodore 64 boot',
@@ -199,6 +204,7 @@ export const bootScreenshots = [
   },
   {
     id: 'nes',
+    machineId: 'nintendo-nes',
     name: 'Nintendo NES',
     kind: 'boot',
     title: 'Nintendo NES cartridge boot',
@@ -216,6 +222,7 @@ export const bootScreenshots = [
   },
   {
     id: 'commodore-amiga',
+    machineId: 'commodore-amiga',
     name: 'Commodore Amiga',
     kind: 'boot',
     title: 'Commodore Amiga boot',
@@ -243,6 +250,7 @@ export const bootScreenshots = [
   },
   {
     id: 'game-boy',
+    machineId: 'nintendo-game-boy',
     name: 'Nintendo Game Boy',
     group: 'Primary',
     href: '/docs/systems/nintendo/game-boy/',
@@ -257,6 +265,7 @@ export const bootScreenshots = [
   },
   {
     id: 'dragon-32',
+    machineId: 'dragon',
     name: 'Dragon 32',
     group: 'Primary',
     href: '/docs/systems/dragon/',
@@ -278,6 +287,7 @@ export const bootScreenshots = [
   },
   {
     id: 'atari-800xl',
+    machineId: 'atari-800xl',
     name: 'Atari 800XL',
     group: 'Extended',
     href: '/docs/systems/atari/800xl/',
@@ -303,6 +313,7 @@ export const bootScreenshots = [
   },
   {
     id: 'msx1',
+    machineId: 'microsoft-msx1',
     name: 'MSX1',
     group: 'Extended',
     href: '/docs/systems/msx/',
@@ -316,6 +327,7 @@ export const bootScreenshots = [
   },
   {
     id: 'sega-master-system',
+    machineId: 'sega-master-system',
     name: 'Sega Master System',
     group: 'Extended',
     href: '/docs/systems/sega/master-system/',
@@ -330,6 +342,7 @@ export const bootScreenshots = [
   },
   {
     id: 'sord-m5',
+    machineId: 'sord-m5',
     name: 'Sord M5',
     group: 'Extended',
     href: '/docs/systems/sord/m5/',
@@ -345,6 +358,7 @@ export const bootScreenshots = [
   },
   {
     id: 'tatung-einstein',
+    machineId: 'tatung-einstein',
     name: 'Tatung Einstein',
     group: 'Extended',
     href: '/docs/systems/tatung/einstein/',
@@ -358,6 +372,7 @@ export const bootScreenshots = [
   },
   {
     id: 'commodore-vic-20',
+    machineId: 'commodore-vic-20',
     name: 'Commodore VIC-20',
     group: 'Extended',
     href: '/docs/systems/commodore/vic-20/',
@@ -375,6 +390,7 @@ export const bootScreenshots = [
   },
   {
     id: 'commodore-pet',
+    machineId: 'commodore-pet',
     name: 'Commodore PET',
     group: 'Extended',
     href: '/docs/systems/commodore/pet/',
@@ -406,6 +422,7 @@ export const bootScreenshots = [
   },
   {
     id: 'acorn-electron',
+    machineId: 'acorn-electron',
     name: 'Acorn Electron',
     group: 'Extended',
     href: '/docs/systems/acorn/electron/',
@@ -419,6 +436,7 @@ export const bootScreenshots = [
   },
   {
     id: 'oric-atmos',
+    machineId: 'oric',
     name: 'Oric Atmos',
     group: 'Extended',
     href: '/docs/systems/oric/atmos/',
@@ -432,6 +450,7 @@ export const bootScreenshots = [
   },
   {
     id: 'memotech-mtx',
+    machineId: 'memotech-mtx',
     name: 'Memotech MTX',
     group: 'Extended',
     href: '/docs/systems/memotech/mtx/',
@@ -445,6 +464,7 @@ export const bootScreenshots = [
   },
   {
     id: 'spectravideo-svi-328',
+    machineId: 'spectravideo-svi-328',
     name: 'Spectravideo SVI-328',
     group: 'Extended',
     href: '/docs/systems/spectravideo/svi-328/',
@@ -458,6 +478,7 @@ export const bootScreenshots = [
   },
   {
     id: 'colecovision',
+    machineId: 'coleco-colecovision',
     name: 'ColecoVision',
     group: 'Extended',
     href: '/docs/systems/coleco/colecovision/',
@@ -471,6 +492,7 @@ export const bootScreenshots = [
   },
   {
     id: 'sega-sg-1000',
+    machineId: 'sega-sg-1000',
     name: 'Sega SG-1000',
     group: 'Extended',
     href: '/docs/systems/sega/sg-1000/',
@@ -485,6 +507,7 @@ export const bootScreenshots = [
   },
   {
     id: 'atari-2600',
+    machineId: 'atari-2600',
     name: 'Atari 2600',
     group: 'Extended',
     href: '/docs/systems/atari/2600/',
@@ -499,6 +522,7 @@ export const bootScreenshots = [
   },
   {
     id: 'atari-5200',
+    machineId: 'atari-5200',
     name: 'Atari 5200',
     group: 'Extended',
     href: '/docs/systems/atari/5200/',
@@ -514,6 +538,7 @@ export const bootScreenshots = [
   },
   {
     id: 'atari-7800',
+    machineId: 'atari-7800',
     name: 'Atari 7800',
     group: 'Extended',
     href: '/docs/systems/atari/7800/',
@@ -529,6 +554,7 @@ export const bootScreenshots = [
   },
   {
     id: 'jupiter-ace',
+    machineId: 'jupiter-ace',
     name: 'Jupiter Ace',
     group: 'Extended',
     href: '/docs/systems/jupiter/ace/',
@@ -542,6 +568,7 @@ export const bootScreenshots = [
   },
   {
     id: 'acorn-atom',
+    machineId: 'acorn-atom',
     name: 'Acorn Atom',
     group: 'Extended',
     href: '/docs/systems/acorn/atom/',
@@ -555,6 +582,7 @@ export const bootScreenshots = [
   },
   {
     id: 'zx81',
+    machineId: 'sinclair-zx81',
     name: 'ZX81',
     group: 'Extended',
     href: '/docs/systems/sinclair/zx81/',
@@ -568,6 +596,7 @@ export const bootScreenshots = [
   },
   {
     id: 'zx80',
+    machineId: 'sinclair-zx80',
     name: 'ZX80',
     group: 'Extended',
     href: '/docs/systems/sinclair/zx80/',
@@ -581,6 +610,7 @@ export const bootScreenshots = [
   },
   {
     id: 'mattel-aquarius',
+    machineId: 'mattel-aquarius',
     name: 'Mattel Aquarius',
     group: 'Extended',
     href: '/docs/systems/mattel/aquarius/',
@@ -606,6 +636,7 @@ export const bootScreenshots = [
   },
   {
     id: 'acorn-bbc-micro',
+    machineId: 'acorn-bbc-micro',
     name: 'Acorn BBC Micro',
     group: 'Extended',
     href: '/docs/systems/acorn/bbc-micro/',
