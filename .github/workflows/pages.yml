@@ -4,6 +4,12 @@ on:
   push:
     branches:
       - main
+  # The registry and the evidence table live in emu198x/emu198x, so a change
+  # there can break this build with nothing here to fire it. Daily and not
+  # weekly: a week is a long time for a broken fleet list to sit on a public
+  # site, and the contract check is what turns the break into a failure.
+  schedule:
+    - cron: "0 6 * * *"
   workflow_dispatch:
 
 permissions:
