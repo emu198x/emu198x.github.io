@@ -76,6 +76,17 @@ await new Promise((resolve) => server.listen(0, resolve));
 const base = `http://localhost:${server.address().port}`;
 
 const ALL = routes(DIST).sort();
+
+// A dist/ that exists but holds no built pages walks to zero routes, and the
+// sweep below would then run zero times and report "0 defect(s)" — success
+// having measured nothing. That is the same silent-skip failure this whole
+// task exists to remove, just relocated into the gate meant to catch it.
+if (ALL.length === 0) {
+  console.error(`a11y: found no pages under ${DIST} — run \`npm run build\` first`);
+  server.close();
+  process.exit(1);
+}
+
 const findings = new Map();
 const skipped = [];
 

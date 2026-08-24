@@ -9,10 +9,10 @@
  * checker; it is a home-page checker with a misleading name.
  */
 import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { join, relative, resolve, sep } from 'node:path';
 
 const siteRoot = new URL('..', import.meta.url).pathname.replace(/\/$/, '');
-const distRoot = join(siteRoot, 'dist');
+const distRoot = process.argv[2] ? resolve(process.argv[2]) : join(siteRoot, 'dist');
 
 function walk(dir, out = []) {
   for (const entry of readdirSync(dir)) {
@@ -41,7 +41,15 @@ function targetExists(href) {
   return existsSync(asIndex) || existsSync(asFile);
 }
 
-const pages = walk(distRoot);
+const pages = existsSync(distRoot) ? walk(distRoot) : [];
+
+// An empty page list is not a clean site — it is a check that measured
+// nothing. Reporting "no dead internal links" over zero pages is the exact
+// silent-skip failure this whole task exists to remove; fail loudly instead.
+if (pages.length === 0) {
+  console.error(`check-internal-links: found no pages under ${distRoot} — run \`npm run build\` first`);
+  process.exit(1);
+}
 
 // target -> Set of routes that link to it
 const deadTargets = new Map();

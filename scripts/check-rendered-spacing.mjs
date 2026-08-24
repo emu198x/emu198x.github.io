@@ -1,10 +1,11 @@
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, statSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 const siteRoot = new URL('..', import.meta.url).pathname.replace(/\/$/, '');
 const distRoot = join(siteRoot, 'dist');
 const joinedLinkPattern = /[A-Za-z0-9)]<a\b|<\/a>[A-Za-z0-9(]|<\/a>,<a\b|<\/a><a\b|(?:and|or)<a\b/g;
 const failures = [];
+let pageCount = 0;
 
 function searchableHtml(html) {
   const bodies = [...html.matchAll(/<([a-z0-9-]+)\b(?=[^>]*\bdata-pagefind-body\b)[^>]*>([\s\S]*?)<\/\1>/gi)];
@@ -28,6 +29,7 @@ function walk(dir) {
 
     if (!path.endsWith('.html')) continue;
 
+    pageCount++;
     const html = searchableHtml(readFileSync(path, 'utf8'));
     const matches = html.match(joinedLinkPattern);
 
@@ -37,7 +39,17 @@ function walk(dir) {
   }
 }
 
-walk(distRoot);
+if (existsSync(distRoot)) {
+  walk(distRoot);
+}
+
+// An empty or missing dist/ walks to zero pages and zero failures, which
+// looks identical to a clean pass. Reporting clean over nothing measured is
+// the same silent-skip defect this whole task exists to remove.
+if (pageCount === 0) {
+  console.error(`check-rendered-spacing: found no pages under ${distRoot} — run \`npm run build\` first`);
+  process.exit(1);
+}
 
 if (failures.length > 0) {
   console.error('Rendered HTML has missing whitespace around links:');
