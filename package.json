@@ -12,7 +12,8 @@
     "check:spacing": "node scripts/check-rendered-spacing.mjs",
     "capture:screenshots": "node scripts/capture-boot-screenshots.mjs",
     "preview": "astro preview",
-    "sync": "node scripts/sync-public-docs.mjs"
+    "sync": "node scripts/sync-public-docs.mjs",
+    "a11y": "node scripts/a11y-sweep.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.0",
@@ -23,5 +24,9 @@
   },
   "optionalDependencies": {
     "@pagefind/darwin-arm64": "^1.5.2"
+  },
+  "devDependencies": {
+    "axe-core": "^4.13.0",
+    "playwright": "^1.62.1"
   }
 }
