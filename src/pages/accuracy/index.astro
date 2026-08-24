@@ -408,7 +408,7 @@ const referenceSources = [
         </div>
         <a href="/docs/status/current-system-usability/">Source status matrix</a>
       </div>
-      <div class="table-wrap">
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Current evidence by system">
         <table>
           <thead>
             <tr>
@@ -427,7 +427,7 @@ const referenceSources = [
                 <td>{system.group}</td>
                 <td><span class="status">{system.status}</span></td>
                 <td>
-                  <div class="meter" aria-label={`${system.name} accuracy progress ${system.progress}%`}>
+                  <div class="meter" role="img" aria-label={`${system.name} accuracy progress ${system.progress}%`}>
                     <span style={`width: ${system.progress}%`}></span>
                   </div>
                   <span class="percent">{system.progress}%</span>
@@ -492,7 +492,7 @@ const referenceSources = [
           <h2>Comparison sources by family</h2>
         </div>
       </div>
-      <div class="table-wrap">
+      <div class="table-wrap" tabindex="0" role="region" aria-label="Comparison sources by family">
         <table>
           <thead>
             <tr>
