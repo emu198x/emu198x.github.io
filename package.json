@@ -4,7 +4,10 @@
   "private": true,
   "version": "0.0.1",
   "scripts": {
+    "ui:fetch": "./scripts/fetch-ui.sh",
+    "predev": "npm run ui:fetch",
     "dev": "node scripts/sync-public-docs.mjs && astro dev",
+    "prebuild": "npm run ui:fetch",
     "build": "node scripts/sync-public-docs.mjs && astro build && node scripts/check-rendered-spacing.mjs && npx pagefind --site dist",
     "check:spacing": "node scripts/check-rendered-spacing.mjs",
     "capture:screenshots": "node scripts/capture-boot-screenshots.mjs",
