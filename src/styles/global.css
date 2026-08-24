@@ -20,9 +20,11 @@
   --line: var(--h-line);
   --line-strong: var(--h-line-soft);
   --accent: var(--h-accent);
-  --accent-strong: var(--h-accent-deep);
+  /* The accent that is readable on the current theme's ground. The kit
+   * swaps it; this site used to carry its own copy of that swap. */
+  --accent-strong: var(--h-accent-ink);
   --accent-soft: color-mix(in oklab, var(--h-accent) 12%, var(--h-page));
-  --signal: var(--h-accent-deep);
+  --signal: var(--h-accent-ink);
   --code-bg: var(--h-code-bg);
   --code-ink: var(--h-code-ink);
   --shadow-sm: 0 1px 2px rgba(58, 44, 31, 0.08);
@@ -41,25 +43,19 @@
   --ink-on-accent: #ffffff;
 }
 
-/* --h-accent-deep is the accent darkened for a light ground; on a dark one it
- * is the wrong end of the pair and text set in it measures 3.7:1. The tokens
- * brighten --h-accent for dark mode, so the "strong" role swaps to that.
+/* Only --ink-on-accent still needs a per-theme swap: white holds on the
+ * light-mode accent fill at 5.11:1, but on the brightened dark-mode accent it
+ * is 3.10:1, where the page ink gives 5.75:1. The accent-as-text swap that used
+ * to live here is --h-accent-ink in the kit now.
+ *
  * Both selectors are needed: the media query covers viewers who have expressed
  * no preference, the attribute covers an explicit choice if this site grows the
  * toggle the family palette already supports. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --accent-strong: var(--h-accent);
-    --signal: var(--h-accent);
-    --ink-on-accent: var(--h-page);
-  }
+  :root:not([data-theme="light"]) { --ink-on-accent: var(--h-page); }
 }
 
-:root[data-theme="dark"] {
-  --accent-strong: var(--h-accent);
-  --signal: var(--h-accent);
-  --ink-on-accent: var(--h-page);
-}
+:root[data-theme="dark"] { --ink-on-accent: var(--h-page); }
 
 * {
   box-sizing: border-box;
