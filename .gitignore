@@ -3,3 +3,6 @@ dist/
 .tmp/
 node_modules/
 src/content/docs/
+
+# Shared components, fetched at build time — never vendored.
+_198x-ui/

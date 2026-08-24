@@ -1,109 +1,32 @@
 ---
-const nav = [
-  { href: '/docs/getting-started/', label: 'Start' },
-  { href: '/downloads/', label: 'Download' },
-  { href: '/accuracy/', label: 'Accuracy' },
-  { href: '/systems/', label: 'Systems' },
-  { href: '/docs/status/current-system-usability/', label: 'Status' },
-  { href: '/docs/features/mcp/', label: 'MCP' },
-  { href: '/docs/', label: 'Docs' },
+/**
+ * This site's nav. The furniture is shared (198x-ui); the routes are not — a
+ * shared nav that knew them would have to be edited to add a page here.
+ *
+ * The wrapper only makes the shared nav sticky, which this site's header has
+ * always been. Everything else about it comes from the kit.
+ */
+import SiteNav from '@198x-ui/components/SiteNav.astro';
+
+const items = [
+  { label: 'Start', href: '/docs/getting-started/' },
+  { label: 'Download', href: '/downloads/' },
+  { label: 'Accuracy', href: '/accuracy/' },
+  { label: 'Systems', href: '/systems/' },
+  { label: 'Status', href: '/docs/status/current-system-usability/' },
+  { label: 'MCP', href: '/docs/features/mcp/' },
+  { label: 'Docs', href: '/docs/' },
 ];
 ---
 
-<header class="site-header" data-pagefind-ignore>
-  <div class="container header-inner">
-    <a class="brand" href="/" aria-label="Emu198x home">
-      <span class="mark" aria-hidden="true">E</span>
-      <span>Emu198x</span>
-    </a>
-    <nav aria-label="Primary navigation">
-      {nav.map((item) => (
-        <>
-          <a href={item.href}>{item.label}</a>{' '}
-        </>
-      ))}
-    </nav>
-  </div>
-</header>
+<div class="site-header" data-pagefind-ignore>
+  <SiteNav prefix="emu" project="emu" items={items} />
+</div>
 
 <style>
   .site-header {
     position: sticky;
     top: 0;
     z-index: 10;
-    border-bottom: 1px solid var(--line);
-    background: rgba(248, 247, 242, 0.92);
-    backdrop-filter: blur(14px);
-  }
-
-  .header-inner {
-    display: flex;
-    min-height: 64px;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
-  .brand {
-    display: inline-flex;
-    min-height: 44px;
-    align-items: center;
-    gap: 0.65rem;
-    color: var(--ink);
-    font-weight: 760;
-    text-decoration: none;
-  }
-
-  .mark {
-    display: inline-grid;
-    width: 2rem;
-    height: 2rem;
-    place-items: center;
-    border-radius: 6px;
-    background: var(--ink);
-    color: var(--paper-strong);
-    font-family: var(--font-mono);
-    font-size: 0.95rem;
-  }
-
-  nav {
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    overflow-x: auto;
-  }
-
-  nav a {
-    display: inline-flex;
-    min-height: 44px;
-    align-items: center;
-    border-radius: 6px;
-    padding: 0 0.72rem;
-    color: var(--ink-muted);
-    font-size: 0.94rem;
-    font-weight: 620;
-    text-decoration: none;
-    white-space: nowrap;
-  }
-
-  @media (hover: hover) and (pointer: fine) {
-    nav a:hover {
-      background: rgba(11, 110, 105, 0.08);
-      color: var(--accent-strong);
-    }
-  }
-
-  @media (max-width: 680px) {
-    .header-inner {
-      align-items: flex-start;
-      flex-direction: column;
-      gap: 0.2rem;
-      padding-block: 0.55rem;
-    }
-
-    nav {
-      width: 100%;
-      padding-bottom: 0.1rem;
-    }
   }
 </style>

@@ -673,19 +673,28 @@ const referenceSources = [
     font-weight: 700;
   }
 
-  .reference-partial {
-    background: rgba(198, 63, 49, 0.1);
-    color: var(--signal);
+  /* Coverage runs Strong > Usable > Partial > Gap. It used to be keyed by hue
+     (teal / blue / red), which does not survive the family palette: the old
+     teal is retired, and a blue here would sit next to the Emu198x project
+     colour, which family-visual-identity.md §3 keeps inside the plate. So the
+     states are one hue at descending intensity — filled, outlined, neutral
+     outline, faint — which orders them and works in both themes. The label is
+     its own legend, so colour is not carrying the meaning alone. */
+  .reference-usable {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--h-accent);
+    color: var(--accent-strong);
   }
 
-  .reference-usable {
-    background: rgba(35, 96, 162, 0.1);
-    color: #174a86;
+  .reference-partial {
+    background: transparent;
+    box-shadow: inset 0 0 0 1px var(--h-line);
+    color: var(--h-ink-body);
   }
 
   .reference-gap {
-    background: rgba(23, 27, 33, 0.08);
-    color: var(--ink-muted);
+    background: transparent;
+    color: var(--h-ink-muted);
   }
 
   .meter {

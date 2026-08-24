@@ -1,65 +1,85 @@
+---
+/**
+ * The family strip is shared and its wording is fixed by
+ * 198x/decisions/sibling-cross-promotion.md — siblings as peers, the hub
+ * linked, each name pointing at that project's own site where it has one and
+ * its GitHub org where it does not.
+ *
+ * The list omits Emu198x: pointing a reader at the site they are already on is
+ * noise, and the strip exists to show them the rest of the family.
+ */
+import FamilyStrip from '@198x-ui/components/FamilyStrip.astro';
+
+const siblings = [
+  { name: 'Code198x', href: 'https://code198x.com' },
+  { name: 'Asm198x', href: 'https://asm198x.github.io' },
+  { name: 'Cat198x', href: 'https://github.com/cat198x' },
+  { name: 'Build198x', href: 'https://github.com/build198x' },
+];
+---
+
 <footer class="site-footer" data-pagefind-ignore>
-  <div class="container footer-inner">
-    <p>Emu198x is part of the 198x family. The teaching site is <a href="https://code198x.com">Code Like It's 198x</a>.</p>
-    <a href="https://github.com/emu198x/emu198x">GitHub</a>
-  </div>
+  <FamilyStrip siblings={siblings} />
+
   <div class="container footer-rights">
+    <!-- Standing rights notice — required on every public surface carrying
+         imagery by 198x/decisions/publishing-third-party-imagery.md. The boot
+         captures on /systems carry their own per-image note; this is the
+         site-wide statement. -->
     <p>
       Screenshots here are our own captures, made from firmware and media supplied locally.
       System firmware, software, artwork and trademarks remain the property of their respective
       owners. Emu198x does not distribute ROMs, disks, tapes or cartridges.
     </p>
+    <a href="https://github.com/emu198x/emu198x">GitHub</a>
   </div>
 </footer>
 
 <style>
   .site-footer {
     margin-top: 5rem;
-    border-top: 1px solid var(--line);
-    padding: 2rem 0 calc(2rem + env(safe-area-inset-bottom));
-    background: var(--paper-strong);
+    background: var(--h-ground);
   }
 
-  .footer-inner {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 1rem;
-  }
-
-  p {
-    max-width: 720px;
-    margin: 0;
-    font-size: 0.94rem;
-  }
-
-  /* Standing rights notice — required on every public surface carrying imagery
-     by 198x/decisions/publishing-third-party-imagery.md. The boot captures on
-     /systems carry their own per-image note; this is the site-wide statement. */
   .footer-rights {
-    margin-top: 1rem;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    padding-top: 1rem;
+    padding-bottom: calc(1.5rem + env(safe-area-inset-bottom));
   }
+
   .footer-rights p {
     max-width: 70ch;
+    margin: 0;
+    /* The rights notice is required text, so it is set at body ink (8.4:1 on
+       the footer ground) rather than the faint tone. --h-ink-faint measures
+       2.27:1 here, which is below AA. */
+    color: var(--h-ink-body);
     font-size: 0.82rem;
-    opacity: 0.75;
   }
-  .footer-inner > a {
+
+  .footer-rights a {
     display: inline-flex;
     min-height: 44px;
     align-items: center;
-    color: var(--ink);
+    color: var(--ink-muted);
+    font-size: 0.88rem;
     font-weight: 650;
+    text-decoration: none;
+    white-space: nowrap;
   }
 
-  p a {
-    font-weight: 650;
+  .footer-rights a:hover {
+    color: var(--accent);
+    text-decoration: underline;
   }
 
   @media (max-width: 680px) {
-    .footer-inner {
-      align-items: flex-start;
+    .footer-rights {
       flex-direction: column;
+      gap: 0.5rem;
     }
   }
 </style>
