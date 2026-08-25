@@ -7,7 +7,7 @@ import { resolve, join } from 'node:path';
 import { readRegistry } from './registry.js';
 import { readEvidence } from './evidence.js';
 import { buildFleet } from './fleet.js';
-import { bootScreenshots, normalizeCaptureTarget } from '../data/boot-screenshots.js';
+import { bootScreenshots, softwareCaptures, normalizeCaptureTarget } from '../data/boot-screenshots.js';
 
 // Astro bundles this module into dist/.prerender/chunks/ at build time, so
 // import.meta.url follows the file into the bundle output rather than
@@ -39,7 +39,13 @@ export function loadSiteData() {
   const root = sourceRoot();
   const machines = readRegistry(root);
   const evidence = readEvidence(root);
-  const captures = bootScreenshots.map(normalizeSystem);
+  // Boot captures carry nested variants and are normalized as a system;
+  // software captures are flat, one per machine. Both go to the fleet, which
+  // is what rejects a second capture of the same kind for the same machine.
+  const captures = [
+    ...bootScreenshots.map(normalizeSystem),
+    ...softwareCaptures.map((target) => normalizeCaptureTarget(target)),
+  ];
   const fleet = buildFleet({ machines, captures });
 
   const missing = fleet.filter((entry) => !evidence.has(entry.machineId));
