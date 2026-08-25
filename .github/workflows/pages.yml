@@ -32,6 +32,13 @@ jobs:
   build:
     name: Build Astro site
     runs-on: ubuntu-latest
+    # Job level, not step level. Set on the build step alone, this was missing
+    # from "Run tests", whose registry test loads the same flagship data — so
+    # the fallback resolved $GITHUB_WORKSPACE/../emu198x, a path no runner has,
+    # and every pull request failed before it ever reached the build. Defined
+    # once here, every step inherits it and no step can be added without it.
+    env:
+      EMU198X_SOURCE_ROOT: ${{ github.workspace }}/emu198x-source
     steps:
       - name: Check out site
         uses: actions/checkout@v7
@@ -56,8 +63,6 @@ jobs:
 
       - name: Build site
         run: npm run build
-        env:
-          EMU198X_SOURCE_ROOT: ${{ github.workspace }}/emu198x-source
 
       # Between building and publishing, because a page that fails WCAG AA is
       # not one to deploy. Every route, both themes — roughly half the defects
