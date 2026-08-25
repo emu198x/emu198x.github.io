@@ -49,21 +49,34 @@ export function loadSiteData() {
     );
   }
 
-  // rightsNote is guaranteed by normalizeCaptureTarget's default whenever a
-  // capture has an image, but a capture that *has* an image and reaches the
-  // page without a note must fail loudly, not render an empty note silently
-  // — see the imagery-rights decision. A capture with no image correctly
-  // carries no rightsNote (see hasImage in boot-screenshots.js): asserting
-  // rights over a capture that never ran would be the same kind of false
-  // claim, just phrased as a note instead of an image.
-  for (const entry of fleet) {
-    for (const capture of entry.captures) {
-      if (capture.hasImage && !capture.rightsNote) {
-        throw new Error(`site-data: ${entry.machineId} capture ${capture.id} has no rightsNote`);
-      }
-    }
-  }
+  assertRightsNotes(fleet);
 
   cached = { fleet, evidence, sourceRoot: root };
   return cached;
+}
+
+// rightsNote is guaranteed by normalizeCaptureTarget's default whenever a
+// capture has an image, but a capture that *has* an image and reaches the
+// page without a note must fail loudly, not render an empty note silently
+// — see the imagery-rights decision. A capture with no image correctly
+// carries no rightsNote (see hasImage in boot-screenshots.js): asserting
+// rights over a capture that never ran would be the same kind of false
+// claim, just phrased as a note instead of an image.
+//
+// Variants are checked with their parent, never skipped: they hang off
+// capture.variants rather than entry.captures, so a loop over entry.captures
+// alone walks past all nineteen of them — and the systems page publishes a
+// rights cell for every one. A note blanked to '' slips past the normalizer's
+// `?? defaultRightsNote` default untouched, which is how a variant row shipped
+// a visible screenshot beside an empty rights claim with the build still green.
+export function assertRightsNotes(fleet) {
+  for (const entry of fleet) {
+    for (const capture of entry.captures) {
+      for (const target of [capture, ...(capture.variants ?? [])]) {
+        if (target.hasImage && !target.rightsNote) {
+          throw new Error(`site-data: ${entry.machineId} capture ${target.id} has no rightsNote`);
+        }
+      }
+    }
+  }
 }
