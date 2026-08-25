@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { resolve, sep } from 'node:path';
 
 const romRoot = '~/.emu198x/roms';
 
@@ -15,8 +15,29 @@ export const captureKindLabels = {
 // every capture record passes through (top-level and each variant alike),
 // so no page can render an <img>, count a capture, or print a rights note
 // for a capture that never ran.
-function publicImagePath(image) {
-  return join(process.cwd(), 'public', image.replace(/^\//, ''));
+// Only a real path under public/ can name a published capture, so anything
+// else fails here rather than being answered as a capture state.
+//
+// Probed directly, three shapes got an answer they had not earned: image: ''
+// made existsSync test public/ itself, so hasImage came back true, a rights
+// note printed over a capture that never ran, and <img src=""> resolved to the
+// page's own URL; '/../README.md' escaped public/ and did the same; '   ' was
+// false only because no file happens to be called that. None is reachable from
+// a current record — which is the point of closing them now, while nothing
+// depends on the old answers.
+function publicImagePath(id, image) {
+  if (typeof image !== 'string' || image.trim() === '') {
+    throw new Error(`boot-screenshots: ${id} has no image path`);
+  }
+  const publicRoot = resolve(process.cwd(), 'public');
+  const path = resolve(publicRoot, image.replace(/^\/+/, ''));
+  if (path !== publicRoot && !path.startsWith(publicRoot + sep)) {
+    throw new Error(`boot-screenshots: ${id} image ${image} resolves outside public/`);
+  }
+  if (path === publicRoot) {
+    throw new Error(`boot-screenshots: ${id} image ${image} names public/ itself, not a file`);
+  }
+  return path;
 }
 
 const defaultRightsNote = 'Captured from locally supplied firmware or media. Emu198x does not distribute ROMs, disks, tapes, or cartridges.';
@@ -674,7 +695,7 @@ export const bootScreenshots = [
     group: 'Extended',
     image: '/media/boot/amstrad-cpc.png',
     caption: 'CPC 464 firmware boot capture.',
-    rightsNote: 'Captured from locally supplied firmware or media. Emu198x does not distribute ROMs, disks, tapes, or cartridges.',
+    rightsNote: defaultRightsNote,
     capture: {
       package: 'emu198x-amstrad-cpc',
       args: [
@@ -730,7 +751,7 @@ export function captureTargets() {
 
 export function normalizeCaptureTarget(target, parent) {
   const kind = target.kind ?? 'boot';
-  const hasImage = existsSync(publicImagePath(target.image));
+  const hasImage = existsSync(publicImagePath(target.id, target.image));
   // A rights note asserts a capture happened. Never carry one for a record
   // whose image doesn't exist — that record is an intent, not evidence.
   const rightsNote = hasImage ? (target.rightsNote ?? defaultRightsNote) : null;
