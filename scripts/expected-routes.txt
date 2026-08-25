@@ -1,6 +1,7 @@
 /
 /accuracy/
 /docs/
+/docs/capture/
 /docs/changelog/
 /docs/getting-started/
 /docs/mcp/

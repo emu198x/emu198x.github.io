@@ -1,0 +1,420 @@
+---
+import DocLayout from '@layouts/DocLayout.astro';
+import { loadSiteData } from '@lib/site-data.js';
+
+// Measured from the flagship's registry, never typed here — same source and
+// same reason as the getting-started, MCP and scripting pages. This page
+// claims the capture steps reach every machine, so a hand-written count
+// would make that claim false the day a machine lands, with the build still
+// green.
+const { fleet } = loadSiteData();
+const machineCount = fleet.length;
+---
+
+<DocLayout
+  title="Capture"
+  description="Getting a picture, a frame sequence, a WAV or an MP4 out of a running machine. What the capture surface covers today, how to drive it, and where it stops."
+>
+  <h1>Capture</h1>
+
+  <p>
+    A capture is a file the machine made. Emu198x hands you the frame its
+    video path painted, the samples its sound chip emitted, or both muxed
+    together — written to disk by the same headless run that produced them,
+    with no window, no screen grabber and nobody watching.
+  </p>
+
+  <p>
+    The still image is the everyday case, and it is the one this site runs on.
+    Every boot picture on the <a href="/systems/">system matrix</a> came out of
+    a capture step, and the example further down writes the NES one byte for
+    byte.
+  </p>
+
+  <h2>The mental model</h2>
+
+  <ul>
+    <li>
+      <strong>A capture reads the last frame the machine emitted.</strong>{' '}
+      Nothing is re-rendered for the file. Run the machine first: asking for a
+      screenshot before a single frame has been painted fails with{' '}
+      <code>no frame has been captured</code>, which is the machine telling you
+      the truth about how far it got.
+    </li>
+    <li>
+      <strong>You get the whole frame, border and all.</strong> The PNG is the
+      machine's own framebuffer at its own geometry — 352&nbsp;×&nbsp;296 on a
+      Spectrum, 416&nbsp;×&nbsp;312 on a C64. There is no cropping to the
+      "screen area" and no aspect correction, so square pixels on disk are what
+      the hardware clocked out.
+    </li>
+    <li>
+      <strong>Two routes, one vocabulary.</strong> Most machines take a{' '}
+      <code>--screenshot PATH</code> flag for the one-shot case. Every machine
+      takes <code>save_screenshot</code> as a step in a{' '}
+      <a href="/docs/scripting/">script</a> or a tool call over{' '}
+      <a href="/docs/mcp/">MCP</a>. The steps are the portable half.
+    </li>
+    <li>
+      <strong>The run is the receipt.</strong> A capture that came from a
+      committed script can be reproduced by anyone holding the same firmware.
+      That is the difference between a picture and evidence.
+    </li>
+  </ul>
+
+  <h3>What may be published</h3>
+
+  <p>
+    Worth knowing before the captures pile up, because it shapes which of them
+    you want. Software this project did not write is illustrated with stills —
+    one to three frames, each attached to a claim the surrounding writing is
+    making, never a gallery. Where a still cannot carry the point, because the
+    point is a raster split or a scroll or sprite flicker, the published form
+    is a silent animated WebP at the machine's own field rate. MP4 files and
+    audio captures stay local: a muxed container carries a sound track, and a
+    captured tune is a whole composition by its own author rather than an
+    extract of anything. Capturing any of it to check your work is a separate
+    question; this is about what goes on a public page.
+  </p>
+
+  <h2>What works today</h2>
+
+  <p>
+    All {machineCount} machines carry the capture steps, because they live in
+    the shared session every binary is built on. What differs is the
+    command-line shorthand around them.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Need</th><th>Steps</th><th>Flag</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Still image</td>
+        <td><code>save_screenshot</code></td>
+        <td>
+          <code>--screenshot PATH</code>, on every machine but the ZX
+          Spectrum, ZX80 and ZX81
+        </td>
+      </tr>
+      <tr>
+        <td>Sound</td>
+        <td>
+          <code>start_audio_recording</code>,{' '}
+          <code>stop_audio_recording</code>, <code>save_audio_capture</code>,{' '}
+          <code>clear_audio_capture</code>
+        </td>
+        <td>
+          <code>--audio-capture PATH</code>, on every machine but those three
+          plus the C64 and Dragon
+        </td>
+      </tr>
+      <tr>
+        <td>Moving picture</td>
+        <td>
+          <code>start_video_recording</code>,{' '}
+          <code>stop_video_recording</code>
+        </td>
+        <td>None</td>
+      </tr>
+      <tr>
+        <td>Frame sequence</td>
+        <td><code>save_screenshot</code>, once per frame</td>
+        <td>None</td>
+      </tr>
+      <tr>
+        <td>Did anything arrive?</td>
+        <td>
+          <code>query</code> on <code>capture.has_frame</code> or{' '}
+          <code>capture.has_audio</code>
+        </td>
+        <td>None</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    One format per medium, and the file name does not choose it. A still is a
+    PNG: 8-bit RGBA, lossless, no palette indexing. Audio is a 16-bit PCM WAV
+    at the machine's own rate — 48&nbsp;kHz on a C64 or a Master System,
+    44.1&nbsp;kHz on a Spectrum — with the channel count the machine emits.
+    Video is an H.264 MP4, and the audio track is muxed in when the run
+    captured any.
+  </p>
+
+  <p>
+    The video encode is deliberate about dither, and it took two goes to get
+    there. Retro framebuffers carry checkerboards at single-pixel frequency,
+    and libx264's defaults — CRF rate control over 4:2:0 chroma — average that
+    into flat colour. The encoder now runs a constant quantiser at QP 12 over
+    full 4:4:4 chroma, which holds the pattern and holds it equally on the
+    first frame as on the hundredth. The earlier CRF setting drifted over the
+    opening frames, which on a short loop reads as a flash at every restart.
+  </p>
+
+  <h3>What a frame comes out as</h3>
+
+  <table>
+    <thead>
+      <tr><th>Machine</th><th>PNG size</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>ZX Spectrum</td><td>352 × 296</td></tr>
+      <tr><td>Commodore 64</td><td>416 × 312</td></tr>
+      <tr><td>Amstrad CPC</td><td>832 × 288</td></tr>
+      <tr><td>Sega Master System</td><td>280 × 240</td></tr>
+      <tr><td>NES</td><td>256 × 240</td></tr>
+      <tr><td>Game Boy</td><td>160 × 144</td></tr>
+    </tbody>
+  </table>
+
+  <p>
+    Those are the emitted frames, not the advertised display modes. A Spectrum
+    is a 256&nbsp;×&nbsp;192 screen inside a border the hardware also draws, and
+    the capture keeps both. The CPC number is wide because its pixel clock is,
+    not because anything was scaled.
+  </p>
+
+  <h2>Capturing a still</h2>
+
+  <p>
+    The shortest run that needs no firmware and no software you have to find.
+    From a source checkout, this boots a NES on a synthetic cartridge built in
+    this repository, runs 300 frames and writes the frame it stopped on:
+  </p>
+
+  <pre tabindex="0"><code>cargo run --release -p emu198x-nes -- \
+  --rom test-data/synthetic-cartridges/nintendo-nes-logo.nes \
+  --frames 300 \
+  --screenshot boot.png</code></pre>
+
+  <pre tabindex="0"><code>NES runtime: time=53426560 cartridge_loaded=true</code></pre>
+
+  <p>
+    <code>boot.png</code> is a 256&nbsp;×&nbsp;240 picture of the Emu198x
+    wordmark drawn in the machine's own tiles. It is the same file the{' '}
+    <a href="/systems/nintendo-nes/">NES page</a> shows, down to the checksum,
+    which is the useful property: the picture and the command that made it
+    travel together. A release binary takes the same flags.
+  </p>
+
+  <p>
+    Three machines have no <code>--screenshot</code> flag, and the step covers
+    them. Put this in <code>shot.json</code>:
+  </p>
+
+  <pre tabindex="0"><code>[
+  &lbrace;"action":"wait_for_boot","max_frames":300&rbrace;,
+  &lbrace;"action":"save_screenshot","path":"boot.png"&rbrace;,
+  &lbrace;"action":"query","path":"capture.has_frame"&rbrace;
+]</code></pre>
+
+  <pre tabindex="0"><code>./emu198x-spectrum --script shot.json</code></pre>
+
+  <p>
+    This one needs the machine's firmware, since a Spectrum paints nothing
+    without it. The report comes back on standard output:
+  </p>
+
+  <pre tabindex="0"><code>&lbrace;"kind":"wait_for_boot","frames":87,"reached":24321024,"reason":"found copyright banner on row 23","row":23&rbrace;
+&lbrace;"kind":"query","result":&lbrace;"path":"capture.has_frame","value":true&rbrace;&rbrace;</code></pre>
+
+  <p>
+    Two steps ran and three are in the file, because{' '}
+    <code>save_screenshot</code> reports nothing at all — it either writes the
+    file or ends the run with an error. That is why the{' '}
+    <code>capture.has_frame</code> query is worth the third line: it is the
+    machine confirming there was a frame to write, in the report you keep.
+  </p>
+
+  <h2>A frame sequence</h2>
+
+  <p>
+    Moving pictures for publication start as numbered PNGs, and stay that way
+    on disk. There is no frame-dump flag, so a sequence is one{' '}
+    <code>save_screenshot</code> per frame with the machine advanced between
+    them. Sixty frames of settling, then three consecutive fields:
+  </p>
+
+  <pre tabindex="0"><code>[
+  &lbrace;"action":"run_frames","frames":60&rbrace;,
+  &lbrace;"action":"save_screenshot","path":"frames/0001.png"&rbrace;,
+  &lbrace;"action":"run_frames","frames":1&rbrace;,
+  &lbrace;"action":"save_screenshot","path":"frames/0002.png"&rbrace;,
+  &lbrace;"action":"run_frames","frames":1&rbrace;,
+  &lbrace;"action":"save_screenshot","path":"frames/0003.png"&rbrace;
+]</code></pre>
+
+  <p>
+    Save that as <code>frames.json</code> and point a machine at a moving
+    cartridge. The directory has to exist first — a capture writes a file and
+    will not build a path to put it in:
+  </p>
+
+  <pre tabindex="0"><code>mkdir frames
+cargo run --release -p emu198x-sega-master-system -- \
+  --cart test-data/sega/synthetic-cart/master-system-raster.sms \
+  --script frames.json</code></pre>
+
+  <p>
+    Keep those frames. They are the honest artefact — someone can look at what
+    was captured instead of trusting an encoder — and the animation is built
+    from them as a separate step, with a tool of your own. Emu198x ships no
+    WebP encoder; the reference one from the libwebp project reads a sequence
+    directly:
+  </p>
+
+  <pre tabindex="0"><code>img2webp -loop 0 -d 17 -lossless frames/*.png -o clip.webp</code></pre>
+
+  <p>
+    <code>-d</code> is the per-frame duration in whole milliseconds, and it is
+    the number to get right. A 60Hz machine wants 17, a 50Hz machine 20. Do not
+    halve the rate to save bytes: a scroll survives it, but flicker does not,
+    and where the effect <em>is</em> the flicker — sprite multiplexing,
+    interlace, two-frame colour mixing — a halved rate shows a reader something
+    the hardware never did. These are small pictures from machines with a
+    handful of colours on screen, so the saving would be tiny anyway.
+  </p>
+
+  <h2>Sound and video</h2>
+
+  <p>
+    Audio comes out as WAV, either from a flag over a whole run or from a
+    bracketed pair of steps that captures the window between them. The flag
+    form:
+  </p>
+
+  <pre tabindex="0"><code>cargo run --release -p emu198x-sega-master-system -- \
+  --cart test-data/sega/synthetic-cart/master-system.sms \
+  --frames 150 \
+  --audio-capture tone.wav</code></pre>
+
+  <p>
+    That writes a 16-bit mono WAV at 48&nbsp;kHz, and it writes silence: the
+    synthetic cartridges paint a frame and never touch the sound chip. The
+    capture path is what the run proves. To hear a machine you need software
+    that plays something, which is yours to supply.
+  </p>
+
+  <p>
+    Video is one MP4 per recording, bracketed the same way. The machine has to
+    have painted a frame before the recorder starts, because the frame is where
+    it gets its width and height:
+  </p>
+
+  <pre tabindex="0"><code>[
+  &lbrace;"action":"run_frames","frames":1&rbrace;,
+  &lbrace;"action":"start_video_recording","path":"clip.mp4"&rbrace;,
+  &lbrace;"action":"run_frames","frames":100&rbrace;,
+  &lbrace;"action":"stop_video_recording"&rbrace;
+]</code></pre>
+
+  <pre tabindex="0"><code>&lbrace;"duration_ms":1666,"frames":100,"has_audio":true,"kind":"stop_video_recording","path":"clip.mp4"&rbrace;</code></pre>
+
+  <p>
+    Only the stop step reports, and it reports what landed: 100 frames, 1.666
+    seconds of machine time, and a muxed sound track. Every frame the machine
+    emits between the two steps is teed into the recorder, so the clip's frame
+    rate is the machine's field rate and not a setting.
+  </p>
+
+  <p>
+    No flag turns the sound track off, but a{' '}
+    <code>clear_audio_capture</code> step immediately before the stop empties
+    the buffer the muxer reads, and the recording finishes with{' '}
+    <code>"has_audio":false</code> and one video stream. That is the whole
+    mechanism, and it is worth knowing: a container with a sound track in it is
+    the reason a clip stays local.
+  </p>
+
+  <h2>What you need that we cannot give you</h2>
+
+  <p>
+    <strong>Firmware and software</strong>, the same as any other way of
+    running these machines. Emu198x ships no ROMs, no BIOS images, and no
+    disks, tapes or cartridges; the <a href="/downloads/">downloads page</a>{' '}
+    sets out the position on that. The synthetic cartridges used above are the
+    exception, and a narrow one: a few machines declare no firmware — the NES,
+    Game Boy, Master System, Game Gear, SG-1000 and Atari 2600 among them — so
+    a cartridge built in this repository is enough to reach a frame. Every
+    other machine needs its manufacturer's ROM before there is anything to
+    photograph.
+  </p>
+
+  <p>
+    <strong>ffmpeg, for video.</strong> The recorder streams raw frames to an
+    ffmpeg subprocess and shells out a second time to mux audio, so a machine
+    without it on <code>PATH</code> refuses the recording rather than writing a
+    broken file. Stills and WAVs need nothing beyond the binary.
+  </p>
+
+  <p>
+    <strong>An encoder, for animation.</strong> Turning a PNG sequence into an
+    animated WebP happens outside Emu198x, with whatever tool you prefer.
+  </p>
+
+  <h2>What does not work yet</h2>
+
+  <ul>
+    <li>
+      <strong>One still format, and the extension is ignored.</strong> Every
+      screenshot is a PNG. Naming the output <code>shot.webp</code> writes a
+      PNG called <code>shot.webp</code>, which a viewer opens and a build step
+      may not. There is no BMP, JPEG or WebP writer to ask for.
+    </li>
+    <li>
+      <strong>No scaling, cropping or aspect correction.</strong> Nothing
+      offers an integer scale, a border mode, a 4:3 stretch or a palette
+      choice. What the machine emitted is what lands, and any of that is a
+      later step in an image tool. The Dragon is the single exception with
+      screenshot options of its own, and they are that machine's, not a
+      pattern.
+    </li>
+    <li>
+      <strong>No frame dump.</strong> Capturing 300 frames means 600 steps in
+      the file, generated rather than typed. A flag that writes every emitted
+      frame to a directory would be the obvious fix and does not exist.
+    </li>
+    <li>
+      <strong>The window cannot capture anything.</strong> There is no
+      screenshot key and no record button; the controls a binary lists under{' '}
+      <code>--help</code> are the whole set. Capture is a headless and MCP
+      feature, so a session you drove by hand has to be re-run as a script to
+      produce a file.
+    </li>
+    <li>
+      <strong>Video is MP4 or nothing.</strong> No WebM, no GIF, no animated
+      WebP, no frame rate or bitrate control, and no switch for the sound
+      track — dropping it means clearing the audio buffer at the right moment
+      and reading the report to check it worked. A container built to carry
+      sound is the only moving format the tool writes, which is the wrong shape
+      for anything headed for a public page.
+    </li>
+    <li>
+      <strong>A recording pins the session.</strong> Loading a snapshot while
+      one is in flight is refused —{' '}
+      <code>operation `restore_snapshot` is not allowed while video recording
+      is active</code> — as is starting a second recording, because either
+      would jump-cut the clip. Save state before you start.
+    </li>
+    <li>
+      <strong>Audio has no dials.</strong> No format choice beyond WAV, no
+      sample rate, no channel count, no mixdown. The stream arrives as the
+      machine produced it.
+    </li>
+    <li>
+      <strong>Captures do not create directories.</strong> A path whose parent
+      is missing ends the run with{' '}
+      <code>No such file or directory (os error 2)</code> and no clue which
+      step asked for it.
+    </li>
+    <li>
+      <strong>The capture flags are per-machine.</strong>{' '}
+      <code>--headless --help</code> is the list for the machine in front of
+      you, and reading one machine's teaches you that machine. The ZX80 and
+      ZX81 do not even take <code>--headless</code> on its own, though both run
+      a script and both serve MCP. The steps are the part that travels.
+    </li>
+  </ul>
+</DocLayout>
