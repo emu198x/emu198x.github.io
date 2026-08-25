@@ -8,11 +8,16 @@
  * of waiting for someone to remember this file. The page listed six binaries
  * against a release of thirty for exactly that reason.
  *
- * The join from a machine to its archive is `crate`, and only `crate`. Nine
+ * The join from a machine to its archive is `crate`, and only `crate`. Eight
  * of the thirty machine ids differ from their crate name
  * (`sinclair-zx-spectrum` ships as `emu198x-spectrum`), so a name built from
- * `machineId` would 404 on nine of every thirty links. systems.toml exists
+ * `machineId` would 404 on eight of every thirty links. systems.toml exists
  * because inferring that join by pattern produced wrong answers three times.
+ *
+ * Counted, not estimated: this comment said nine until someone counted. The
+ * number is incidental — the join is read per machine and would be right at
+ * any count — but a wrong number in a comment about not guessing is a poor
+ * advertisement for the rule.
  */
 import { readFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';

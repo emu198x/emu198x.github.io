@@ -102,7 +102,7 @@ test('an asset name is the crate, the target triple and the extension', () => {
 });
 
 test('the asset name is built from the crate, never the machine id', () => {
-  // Nine of the thirty machine ids differ from their crate. Building
+  // Eight of the thirty machine ids differ from their crate. Building
   // `emu198x-sinclair-zx-spectrum-...` would 404 on every one of them.
   const [appleSilicon] = TARGETS;
   const built = assetName(SPECTRUM.crate, appleSilicon);
