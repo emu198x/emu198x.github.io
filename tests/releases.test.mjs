@@ -219,17 +219,13 @@ test('the downloads page has dropped the --no-default-features example', () => {
   assert.ok(!readFileSync(DOWNLOADS, 'utf8').includes('--no-default-features'));
 });
 
-test('detection reorders and marks; it never removes an archive', () => {
-  // The script may only move list items and unhide a label. A call that takes
-  // a node out of the document would break the promise the page makes in its
-  // own copy, that every archive stays reachable.
-  const source = readFileSync(DOWNLOADS, 'utf8');
-  const script = source.slice(source.indexOf('<script>'), source.indexOf('</script>'));
-  assert.ok(script.length > 0, 'the page has no detection script');
-  for (const forbidden of ['.remove()', 'removeChild', 'display: none', 'setAttribute(\'hidden\'', 'innerHTML']) {
-    assert.ok(!script.includes(forbidden), `the detection script uses ${forbidden}`);
-  }
-});
+// "Detection reorders and marks; it never removes an archive" used to be
+// checked here by grepping the script for five spellings. It caught
+// `.remove()` and let `li.hidden = true` and `li.style.display = "none"`
+// straight through, either of which hides all 120 archives. The check now
+// lives in tests/downloads-detection.test.mjs, which runs the real script
+// against a document and asserts the reachable links come out as they went
+// in — a property no new spelling gets around.
 
 // A version that updates itself inside a sentence whose evidence does not.
 // The /systems/ run-report said "all thirty of release {version}'s Apple
