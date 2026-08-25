@@ -3,6 +3,10 @@
  * This site's nav. The furniture is shared (198x-ui); the routes are not — a
  * shared nav that knew them would have to be edited to add a page here.
  *
+ * Automation sits second because it is what the suite is for. It points at
+ * MCP, which is the front door to the automation set: scripting, capture and
+ * observability are all one click on from there and from the docs sidebar.
+ *
  * The wrapper only makes the shared nav sticky, which this site's header has
  * always been. Everything else about it comes from the kit.
  */
@@ -10,15 +14,30 @@ import SiteNav from '@198x-ui/components/SiteNav.astro';
 
 const items = [
   { label: 'Start', href: '/docs/getting-started/' },
-  { label: 'Download', href: '/downloads/' },
-  { label: 'Accuracy', href: '/accuracy/' },
+  { label: 'Automation', href: '/docs/mcp/' },
   { label: 'Systems', href: '/systems/' },
+  { label: 'Accuracy', href: '/accuracy/' },
+  { label: 'Download', href: '/downloads/' },
   { label: 'Docs', href: '/docs/' },
 ];
+
+/**
+ * Mark the entry for the page the reader is on. The kit renders `current` as
+ * weight and colour *and* as aria-current, so a screen reader is told which
+ * entry it is rather than being left to infer it from a shade it cannot see.
+ *
+ * The match is exact, not by section. The kit emits aria-current="page", which
+ * is a claim about this page and not about the branch it sits in; marking
+ * "Docs" while the reader is on /docs/scripting/ would announce a link to
+ * somewhere else as the current page. Deeper pages carry their own marking in
+ * the documentation sidebar, where the match is exact too.
+ */
+const here = Astro.url.pathname;
+const marked = items.map((item) => ({ ...item, current: here === item.href }));
 ---
 
 <div class="site-header" data-pagefind-ignore>
-  <SiteNav prefix="emu" project="emu" items={items} />
+  <SiteNav prefix="emu" project="emu" items={marked} />
 </div>
 
 <style>

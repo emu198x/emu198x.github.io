@@ -7,15 +7,40 @@ interface Props {
 }
 
 const { title, description } = Astro.props;
+
+/**
+ * The documentation set, in reading order: the machine first, then the four
+ * ways to drive it without watching it, then the two pages that are about
+ * getting and tracking builds rather than using one.
+ */
+const links = [
+  { label: 'Getting Started', href: '/docs/getting-started/' },
+  { label: 'MCP', href: '/docs/mcp/' },
+  { label: 'Scripting', href: '/docs/scripting/' },
+  { label: 'Capture', href: '/docs/capture/' },
+  { label: 'Observability', href: '/docs/observability/' },
+  { label: 'Downloads', href: '/downloads/' },
+  { label: 'Changelog', href: '/docs/changelog/' },
+];
+
+// aria-current carries the current page to a screen reader; the .current rule
+// below carries it to a sighted reader as weight and a rule down the left
+// edge. Colour alone would leave both readers who cannot see it and readers
+// in a theme where the shade is close guessing which page they are on.
+const here = Astro.url.pathname;
 ---
 
 <BaseLayout title={title} description={description}>
   <main class="doc-shell container">
-    <aside class="doc-nav" aria-label="Documentation sections" data-pagefind-ignore>
-      <a href="/docs/getting-started/">Getting Started</a>{' '}
-      <a href="/downloads/">Downloads</a>{' '}
-      <a href="/docs/changelog/">Changelog</a>
-    </aside>
+    <nav class="doc-nav" aria-label="Documentation" data-pagefind-ignore>
+      {links.map((link) => (
+        <a
+          href={link.href}
+          class:list={['doc-nav-link', { current: here === link.href }]}
+          aria-current={here === link.href ? 'page' : undefined}
+        >{link.label}</a>
+      ))}
+    </nav>
     <article class="doc-content" data-pagefind-body>
       <slot />
     </article>
@@ -39,7 +64,7 @@ const { title, description } = Astro.props;
     gap: 0.2rem;
   }
 
-  .doc-nav a {
+  .doc-nav-link {
     display: flex;
     min-height: 44px;
     align-items: center;
@@ -49,6 +74,15 @@ const { title, description } = Astro.props;
     font-size: 0.93rem;
     font-weight: 620;
     text-decoration: none;
+  }
+
+  /* The current page carries three cues: aria-current for a screen reader, a
+     heavier weight, and a rule down the left edge. Colour on its own is the
+     one cue a reader who cannot see it never gets. */
+  .doc-nav-link.current {
+    box-shadow: inset 3px 0 0 var(--accent);
+    color: var(--ink);
+    font-weight: 800;
   }
 
   .doc-content {
@@ -100,7 +134,7 @@ const { title, description } = Astro.props;
   }
 
   @media (hover: hover) and (pointer: fine) {
-    .doc-nav a:hover {
+    .doc-nav-link:hover {
       background: color-mix(in oklab, var(--h-accent) 10%, transparent);
       color: var(--accent-strong);
     }
@@ -120,7 +154,7 @@ const { title, description } = Astro.props;
       padding-bottom: 0.4rem;
     }
 
-    .doc-nav a {
+    .doc-nav-link {
       white-space: nowrap;
     }
   }
