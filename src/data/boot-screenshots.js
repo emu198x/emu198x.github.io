@@ -734,6 +734,195 @@ export const bootScreenshots = [
   },
 ];
 
+// Software captures — real commercial and demoscene releases, loaded from the
+// local library, one per machine.
+//
+// These are governed by 198x/decisions/capturing-published-software.md, which
+// is stricter than the firmware captures above and imposes three conditions
+// this file has to hold up. Acknowledgement: every capture names title,
+// publisher, year and platform. Provenance: it records which dump it came
+// from, because a title string carries no medium and no version. And
+// proportionality: the frame is evidence for a stated claim about the
+// emulator's media path, not an illustration of the game.
+//
+// `work` and `dump` are what discharge the first two, and requireAcknowledgement
+// below refuses to build without them — the policy is enforced by the shape of
+// the data rather than by whoever adds the next record remembering to.
+//
+// One per machine is not a style choice either: fleet.js rejects a second
+// capture of the same kind for the same machine, so the policy's one-frame
+// limit is structural.
+const softwareCapture = ({ machineId, work, dump, claim, capture }) => ({
+  id: `${machineId}-software`,
+  machineId,
+  name: work.title,
+  kind: 'software',
+  title: `${work.title} on ${machineId}`,
+  image: `/media/software/${machineId}.png`,
+  caption: claim,
+  work,
+  dump,
+  // The standing footer notice is the site-wide statement; this is the
+  // per-image acknowledgement the decision requires alongside it.
+  rightsNote: `${work.title} © ${work.year} ${work.publisher}. Captured by us from a locally held ${dump.format}; Emu198x does not distribute it.`,
+  capture,
+});
+
+export const softwareCaptures = [
+  softwareCapture({
+    machineId: 'sinclair-zx-spectrum',
+    work: { title: 'Knight Lore', publisher: 'Ultimate Play The Game', year: 1984 },
+    dump: { file: 'Knight Lore (1984)(Ultimate Play The Game).tap', format: 'TAP tape image', catalogue: 'TOSEC' },
+    claim: 'The tape path loads a real commercial TAP and runs on to the game\u2019s own menu \u2014 Filmation\u2019s title screen, drawn by the game rather than the ROM.',
+    capture: {
+      package: 'emu198x-spectrum',
+      mode: 'script',
+      mediaEnv: 'EMU198X_SOFTWARE_SPECTRUM_TAPE',
+      mediaLabel: 'Knight Lore TAP',
+      script: [
+        { action: 'load_media', slot: 'tape-1', kind: 'tape', path: '{media}' },
+        { action: 'autoload_tape', slot: 'tape-1', max_boot_frames: 400 },
+        { action: 'run_frames', frames: 24000 },
+        { action: 'save_screenshot', path: '{output}' },
+      ],
+      requiredFiles: [`${romRoot}/sinclair-zx-spectrum-48k/48.rom`],
+    },
+  }),
+  softwareCapture({
+    machineId: 'commodore-c64',
+    work: { title: 'Wizball', publisher: 'Ocean', year: 1987 },
+    dump: { file: 'Wizball (1987)(Ocean).d64', format: 'D64 disk image', catalogue: 'TOSEC' },
+    claim: 'A real 1541 load, timed by the drive motor rather than a fixed frame count, reaches Wizball\u2019s player-select screen.',
+    capture: {
+      package: 'emu198x-c64',
+      mode: 'script',
+      mediaEnv: 'EMU198X_SOFTWARE_C64_DISK',
+      mediaLabel: 'Wizball D64',
+      args: ['--headless', '--disk', '{media}', '--autoload-disk', '--script', '{script}'],
+      script: [
+        { action: 'wait_for_query_bool', query: 'drive8.motor_on', value: true, timeout_frames: 2000 },
+        { action: 'wait_for_query_bool', query: 'drive8.motor_on', value: false, timeout_frames: 15000 },
+        { action: 'type_string', text: 'RUN\n' },
+        { action: 'run_frames', frames: 3000 },
+        { action: 'save_screenshot', path: '{output}' },
+      ],
+      requiredFiles: [],
+    },
+  }),
+  softwareCapture({
+    machineId: 'acorn-electron',
+    work: { title: 'Repton 2', publisher: 'Superior Software', year: 1985 },
+    dump: { file: 'Repton 2 (1985)(Superior Software).uef', format: 'UEF tape image', catalogue: 'TOSEC' },
+    claim: 'The Electron\u2019s tape deck free-runs once inserted, with no transport step, and reaches Repton 2 playing its own attract mode.',
+    capture: {
+      package: 'emu198x-acorn-electron',
+      mode: 'script',
+      mediaEnv: 'EMU198X_SOFTWARE_ELECTRON_TAPE',
+      mediaLabel: 'Repton 2 UEF',
+      script: [
+        { action: 'load_media', slot: 'tape-1', kind: 'tape', path: '{media}' },
+        { action: 'run_frames', frames: 150 },
+        { action: 'type_string', text: 'CHAIN' },
+        { action: 'press_keys', keys: ['shift', '2'] },
+        { action: 'press_keys', keys: ['shift', '2'] },
+        { action: 'press_key', key: 'return' },
+        { action: 'run_frames', frames: 30000 },
+        { action: 'save_screenshot', path: '{output}' },
+      ],
+      requiredFiles: [],
+    },
+  }),
+  softwareCapture({
+    machineId: 'dragon',
+    work: { title: 'Chuckie Egg', publisher: 'A&F Software', year: 1983 },
+    dump: { file: 'Chuckie Egg (1983)(A&F Software).cas', format: 'CAS tape image', catalogue: 'TOSEC' },
+    claim: 'CLOADM plus EXEC carries a machine-code tape all the way to its title screen \u2014 the load path two other Dragon tapes halt inside.',
+    capture: {
+      package: 'emu198x-dragon',
+      mode: 'script',
+      mediaEnv: 'EMU198X_SOFTWARE_DRAGON_TAPE',
+      mediaLabel: 'Chuckie Egg CAS',
+      script: [
+        { action: 'run_frames', frames: 150 },
+        { action: 'load_media', slot: 'tape-1', kind: 'tape', path: '{media}' },
+        { action: 'type_string', text: 'CLOADM\n' },
+        { action: 'run_frames', frames: 30000 },
+        { action: 'type_string', text: 'EXEC\n' },
+        { action: 'run_frames', frames: 600 },
+        { action: 'save_screenshot', path: '{output}' },
+      ],
+      requiredFiles: [`${romRoot}/dragon/dragon32.rom`],
+    },
+  }),
+  softwareCapture({
+    machineId: 'sinclair-zx81',
+    work: { title: 'Mazogs', publisher: 'Bug-Byte Software', year: 1981 },
+    dump: { file: 'MAZOGS.P', format: 'P snapshot/tape image', catalogue: 'TOSEC' },
+    claim: 'A 16K title loads and runs on a machine whose default RAM is 1K \u2014 the keyboard scan needs 20-frame key holds, and the trailing RUN is what puts a picture up.',
+    capture: {
+      package: 'emu198x-sinclair-zx81',
+      mode: 'script',
+      mediaEnv: 'EMU198X_SOFTWARE_ZX81_TAPE',
+      mediaLabel: 'Mazogs P',
+      args: ['--ram-bytes', '16384', '--script', '{script}'],
+      script: [
+        { action: 'load_media', slot: 'tape-1', kind: 'tape', path: '{media}' },
+        { action: 'run_frames', frames: 150 },
+        { action: 'press_key', key: 'J', hold_frames: 20 },
+        { action: 'press_keys', keys: ['shift', 'P'], hold_frames: 20 },
+        { action: 'press_keys', keys: ['shift', 'P'], hold_frames: 20 },
+        { action: 'press_key', key: 'Newline', hold_frames: 20 },
+        { action: 'media_transport', slot: 'tape-1', operation: 'start' },
+        { action: 'run_frames', frames: 27000 },
+        { action: 'press_key', key: 'R', hold_frames: 20 },
+        { action: 'press_key', key: 'Newline', hold_frames: 20 },
+        { action: 'run_frames', frames: 600 },
+        { action: 'save_screenshot', path: '{output}' },
+      ],
+      requiredFiles: [],
+    },
+  }),
+  softwareCapture({
+    machineId: 'acorn-atom',
+    work: { title: 'Breakout', publisher: 'Bug Byte', year: 1981 },
+    dump: { file: 'Breakout (1981)(Bug Byte)[4K].uef', format: 'UEF tape image', catalogue: 'TOSEC' },
+    claim: 'The COS prints PLAY TAPE and waits for a keypress; supplying it loads the tape. This reaches the first file on the tape, which for Breakout is the program\u2019s own instructions rather than the game.',
+    capture: {
+      package: 'emu198x-acorn-atom',
+      mode: 'script',
+      mediaEnv: 'EMU198X_SOFTWARE_ATOM_TAPE',
+      mediaLabel: 'Breakout UEF',
+      args: ['--ram-kb', '32', '--script', '{script}'],
+      script: [
+        { action: 'run_frames', frames: 150 },
+        { action: 'type_string', text: '*LOAD"BREAK"\n' },
+        { action: 'load_media', slot: 'tape-1', kind: 'tape', path: '{media}' },
+        { action: 'run_frames', frames: 300 },
+        { action: 'press_key', key: 'return' },
+        { action: 'run_frames', frames: 30000 },
+        { action: 'type_string', text: 'RUN\n' },
+        { action: 'run_frames', frames: 600 },
+        { action: 'save_screenshot', path: '{output}' },
+      ],
+      requiredFiles: [],
+    },
+  }),
+  softwareCapture({
+    machineId: 'commodore-amiga',
+    work: { title: 'State of the Art', publisher: 'Spaceballs', year: 1992 },
+    dump: { file: 'State of the Art (1992-12-29)(Spaceballs)[TP2#1].adf', format: 'ADF disk image', catalogue: 'TOSEC' },
+    claim: 'A bootblock demo runs from raw ADF on a 1MB A500 \u2014 the stock 512K model freezes on this opening frame, which is why the capture pins a501.',
+    capture: {
+      package: 'emu198x-amiga',
+      mode: 'args',
+      mediaEnv: 'EMU198X_SOFTWARE_AMIGA_DISK',
+      mediaLabel: 'State of the Art ADF',
+      args: ['--headless', '--model', 'a500-a501', '--disk', '{media}', '--frames', '5000', '--screenshot', '{output}'],
+      requiredFiles: [`${romRoot}/commodore-amiga/kick13.rom`],
+    },
+  }),
+];
+
 export function bootScreenshotById(id) {
   return captureTargets().find((target) => target.id === id);
 }
@@ -743,14 +932,45 @@ export function bootScreenshotTargets() {
 }
 
 export function captureTargets() {
-  return bootScreenshots.flatMap((system) => [
-    normalizeCaptureTarget(system),
-    ...(system.variants ?? []).map((variant) => normalizeCaptureTarget(variant, system)),
-  ]);
+  return [
+    ...bootScreenshots.flatMap((system) => [
+      normalizeCaptureTarget(system),
+      ...(system.variants ?? []).map((variant) => normalizeCaptureTarget(variant, system)),
+    ]),
+    ...softwareCaptures.map((target) => normalizeCaptureTarget(target)),
+  ];
+}
+
+// The acknowledgement condition in capturing-published-software.md, made
+// unskippable. A software capture reproduces somebody's copyrighted work, so
+// it may not reach a page without naming the work and the dump it came from.
+// Throwing here fails the build; the alternative is a page that publishes
+// somebody's game with no attribution and no way to tell which dump it was.
+function requireAcknowledgement(target) {
+  const { work, dump } = target;
+  for (const field of ['title', 'publisher', 'year']) {
+    if (!work?.[field]) {
+      throw new Error(`boot-screenshots: software capture ${target.id} has no work.${field}`);
+    }
+  }
+  for (const field of ['file', 'format']) {
+    if (!dump?.[field]) {
+      throw new Error(`boot-screenshots: software capture ${target.id} has no dump.${field}`);
+    }
+  }
+  // A year the catalogue did not state is the one that gets guessed. TOSEC
+  // writes 19xx where it does not know, and a guess printed as a fact is worse
+  // than picking a title whose year is recorded.
+  if (!Number.isInteger(work.year)) {
+    throw new Error(`boot-screenshots: software capture ${target.id} has a non-numeric year (${work.year})`);
+  }
 }
 
 export function normalizeCaptureTarget(target, parent) {
   const kind = target.kind ?? 'boot';
+  if (kind === 'software') {
+    requireAcknowledgement(target);
+  }
   const hasImage = existsSync(publicImagePath(target.id, target.image));
   // A rights note asserts a capture happened. Never carry one for a record
   // whose image doesn't exist — that record is an intent, not evidence.
@@ -773,6 +993,8 @@ export function normalizeCaptureTarget(target, parent) {
       source: target.source ?? captureSource(target),
       runner: target.capture.package,
       output: target.image,
+      work: target.work ?? null,
+      dump: target.dump ?? null,
       rightsNote,
     },
   };

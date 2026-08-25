@@ -8,7 +8,7 @@
  */
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { loadSiteData } from '@lib/site-data.js';
-import { bootCapture, isCaptured } from '@lib/fleet.js';
+import { bootCapture, softwareCapture, isCaptured } from '@lib/fleet.js';
 
 export async function getStaticPaths() {
   const { fleet, evidence } = loadSiteData();
@@ -31,6 +31,11 @@ const captured = isCaptured(entry);
 const pendingLabel = boot?.capture?.mediaEnv
   ? 'Waiting on local media for this machine.'
   : 'Capture pending for this machine.';
+// A real release loaded from the local library, where one has been captured.
+// Asked for by kind for the same reason boot is: it is a different claim.
+// The boot capture says the machine starts; this says the media path carries
+// software the machine was actually sold to run.
+const software = softwareCapture(entry);
 ---
 
 <BaseLayout
@@ -56,6 +61,28 @@ const pendingLabel = boot?.capture?.mediaEnv
       <p class="no-capture">{pendingLabel}</p>
     ) : (
       <p class="no-capture">No capture yet for this machine.</p>
+    )}
+
+    {software?.hasImage && (
+      <>
+        <h2>Loading real software</h2>
+        <p>
+          Booting to a BASIC prompt and loading a tape are different claims, and the
+          second is the one that exercises the media path. This is
+          {' '}<strong>{software.work.title}</strong> ({software.work.publisher},
+          {' '}{software.work.year}), captured here from a locally held
+          {' '}{software.dump.format}.
+        </p>
+        <figure class="capture-figure">
+          <div class="frame">
+            <img src={software.image} alt={software.title} loading="lazy" />
+          </div>
+          <figcaption>
+            <span class="caption">{software.caption}</span>
+            <span class="rights-note">{software.rightsNote}</span>
+          </figcaption>
+        </figure>
+      </>
     )}
 
     <h2>Evidence</h2>

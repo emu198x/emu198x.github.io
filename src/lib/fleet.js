@@ -50,6 +50,14 @@ export function bootCapture(entry) {
   return entry.captures.find((capture) => capture.kind === 'boot') ?? null;
 }
 
+// The software capture, asked for by kind for the same reason bootCapture is.
+// It deliberately does NOT feed isCaptured: a game screenshot is not evidence
+// that a machine boots, and letting one count would mask a machine that never
+// reached its own prompt.
+export function softwareCapture(entry) {
+  return entry.captures.find((capture) => capture.kind === 'software') ?? null;
+}
+
 // A record gated on local media is a real and honest state, but it is not a
 // capture: hasImage, computed once at the model layer, is the measurement.
 export function isCaptured(entry) {
