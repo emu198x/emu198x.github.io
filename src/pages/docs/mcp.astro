@@ -155,10 +155,7 @@ const machineCount = fleet.length;
 
   <p>
     Nothing prints. The server is waiting on standard input, and it boots the
-    machine before the first call arrives — so it needs the same firmware a
-    window needs, found the same way. The{' '}
-    <a href="/docs/getting-started/">getting started page</a> covers where each
-    machine looks for its ROMs.
+    machine before the first call arrives.
   </p>
 
   <p>
@@ -258,7 +255,7 @@ const machineCount = fleet.length;
       </tr>
       <tr>
         <td>Commodore 64</td>
-        <td>158</td>
+        <td>164</td>
         <td>
           <code>vic.</code>, <code>cia1.</code>, <code>cia2.</code>,{' '}
           <code>drive8.</code>, <code>iec.</code>, <code>memory.</code>
@@ -292,6 +289,29 @@ const machineCount = fleet.length;
     Read raw memory with <code>memory_read</code> instead — it takes an address
     and a length and reads the CPU bus with no side effects, which a query path
     is the wrong shape for.
+  </p>
+
+  <h2>What you need that we cannot give you</h2>
+
+  <p>
+    Two things, and neither ships with the emulator.
+  </p>
+
+  <p>
+    <strong>The machine's firmware.</strong> A server boots its machine before
+    the first call arrives, so it needs the same ROMs a window needs, found the
+    same way. The{' '}
+    <a href="/docs/getting-started/">getting started page</a> covers where each
+    machine looks. A machine that cannot find its firmware fails at startup
+    rather than at the first call, which is the easier failure to read.
+  </p>
+
+  <p>
+    <strong>A client that speaks stdio JSON-RPC.</strong> The server talks over
+    standard input and output, one JSON object per line. Any MCP client can
+    drive it, and so can a shell pipeline — the examples above are exactly
+    that, and they are the shortest way to see whether a machine works before
+    wiring an agent to it.
   </p>
 
   <h2>What does not work yet</h2>
