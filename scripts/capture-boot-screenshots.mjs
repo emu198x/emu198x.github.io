@@ -7,7 +7,11 @@ import { captureTargets } from '../src/data/boot-screenshots.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const siteRoot = resolve(__dirname, '..');
-const sourceRoot = resolve(process.env.EMU198X_SOURCE_ROOT ?? join(siteRoot, '..', 'Emu198x'));
+// Lowercase: the real checkout is emu198x/emu198x.github.io's sibling
+// emu198x/emu198x. macOS matches "Emu198x" case-insensitively so a
+// capitalised default would look fine here and fail as a missing directory on
+// Linux CI.
+const sourceRoot = resolve(process.env.EMU198X_SOURCE_ROOT ?? join(siteRoot, '..', 'emu198x'));
 const tempRoot = join(siteRoot, '.tmp', 'boot-screenshot-scripts');
 const bootTargets = captureTargets();
 
