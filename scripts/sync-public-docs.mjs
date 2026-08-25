@@ -10,10 +10,16 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const siteRoot = dirname(fileURLToPath(import.meta.url)).replace(/\/scripts$/, '');
-// Must match site-data.js's sourceRoot() exactly — two readers disagreeing on
-// where the flagship lives only worked by accident, on case-insensitive
-// macOS, where '../Emu198x' and '../emu198x' resolve to the same inode. On
-// Linux CI they are different paths. There is also no local-repo fallback
+// Must resolve to the same directory as site-data.js's sourceRoot(), by a
+// deliberately different route. This script is never bundled, so its own
+// location is stable and is the right anchor: it keeps working when a human
+// runs it from a subdirectory. site-data.js cannot do that — Astro bundles it
+// into dist/.prerender/chunks/, its location moves, and resolving from it
+// silently pointed inside this repo — so it anchors on process.cwd() instead.
+// The two agree because npm always runs scripts with cwd at the package root.
+// Get the case right in either: on case-insensitive macOS '../Emu198x' and
+// '../emu198x' reach the same inode, and on Linux CI they do not.
+// There is also no local-repo fallback
 // here on purpose: a heuristic that can silently source the changelog from
 // this repo instead of the flagship is worse than failing loudly below.
 const sourceRoot = resolve(process.env.EMU198X_SOURCE_ROOT ?? join(siteRoot, '..', 'emu198x'));

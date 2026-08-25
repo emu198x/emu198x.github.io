@@ -563,15 +563,11 @@ export const bootScreenshots = [
     capture: {
       package: 'emu198x-atari-5200',
       args: [
-        '--bios', `${romRoot}/atari-5200/5200.rom`,
         '--cart', '{source}/test-data/synthetic-cartridges/atari-5200-logo.bin',
         '--frames', '320',
         '--screenshot', '{output}',
       ],
-      requiredFiles: [
-        `${romRoot}/atari-5200/5200.rom`,
-        '{source}/test-data/synthetic-cartridges/atari-5200-logo.bin',
-      ],
+      requiredFiles: ['{source}/test-data/synthetic-cartridges/atari-5200-logo.bin'],
     },
   },
   {
