@@ -1,3 +1,6 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
+
 const romRoot = '~/.emu198x/roms';
 
 export const captureKindLabels = {
@@ -6,10 +9,21 @@ export const captureKindLabels = {
   software: 'Software',
 };
 
+// A record here is an intended capture, not evidence one happened — eight of
+// them are mediaEnv-gated on local ROMs/disks the visitor does not have, and
+// have no image file. hasImage is computed once, here, in the normalizer
+// every capture record passes through (top-level and each variant alike),
+// so no page can render an <img>, count a capture, or print a rights note
+// for a capture that never ran.
+function publicImagePath(image) {
+  return join(process.cwd(), 'public', image.replace(/^\//, ''));
+}
+
 const defaultRightsNote = 'Captured from locally supplied firmware or media. Emu198x does not distribute ROMs, disks, tapes, or cartridges.';
 
 const spectrumVariant = (id, name, machine, requiredFiles, maxFrames = 300, caption = `${name} firmware boot capture.`) => ({
   id,
+  machineId: 'sinclair-zx-spectrum',
   name,
   kind: 'boot',
   title: `${name} boot`,
@@ -87,6 +101,7 @@ const spectrumVariants = [
 
 const amigaVariant = (id, name, model, kickstart) => ({
   id,
+  machineId: 'commodore-amiga',
   name,
   kind: 'boot',
   title: `${name} boot`,
@@ -113,6 +128,7 @@ const amigaVariant = (id, name, model, kickstart) => ({
 const amigaVariants = [
   {
     id: 'amiga-a1000',
+    machineId: 'commodore-amiga',
     name: 'Amiga A1000',
     kind: 'boot',
     title: 'Amiga A1000 boot',
@@ -150,11 +166,11 @@ const amigaVariants = [
 export const bootScreenshots = [
   {
     id: 'zx-spectrum',
+    machineId: 'sinclair-zx-spectrum',
     name: 'ZX Spectrum',
     kind: 'boot',
     title: 'ZX Spectrum 48K boot',
     group: 'Primary',
-    href: '/docs/systems/sinclair/zx-spectrum/',
     image: '/media/boot/zx-spectrum.png',
     caption: '48K BASIC copyright screen captured from the shared script harness.',
     rightsNote: defaultRightsNote,
@@ -171,11 +187,11 @@ export const bootScreenshots = [
   },
   {
     id: 'commodore-c64',
+    machineId: 'commodore-c64',
     name: 'Commodore 64',
     kind: 'boot',
     title: 'Commodore 64 boot',
     group: 'Primary',
-    href: '/docs/systems/commodore/c64/',
     image: '/media/boot/commodore-c64.png',
     caption: 'C64 BASIC READY prompt after the ROM boot sequence.',
     rightsNote: defaultRightsNote,
@@ -199,11 +215,11 @@ export const bootScreenshots = [
   },
   {
     id: 'nes',
+    machineId: 'nintendo-nes',
     name: 'Nintendo NES',
     kind: 'boot',
     title: 'Nintendo NES cartridge boot',
     group: 'Primary',
-    href: '/docs/systems/nintendo/nes/',
     image: '/media/boot/nes.png',
     caption: 'Cartridge boot capture. Set EMU198X_BOOT_NES_ROM to publish this image.',
     rightsNote: defaultRightsNote,
@@ -216,11 +232,11 @@ export const bootScreenshots = [
   },
   {
     id: 'commodore-amiga',
+    machineId: 'commodore-amiga',
     name: 'Commodore Amiga',
     kind: 'boot',
     title: 'Commodore Amiga boot',
     group: 'Primary',
-    href: '/docs/systems/commodore/amiga/',
     image: '/media/boot/commodore-amiga.png',
     caption: 'A500 Kickstart 1.3 insert-disk screen.',
     rightsNote: defaultRightsNote,
@@ -243,9 +259,9 @@ export const bootScreenshots = [
   },
   {
     id: 'game-boy',
+    machineId: 'nintendo-game-boy',
     name: 'Nintendo Game Boy',
     group: 'Primary',
-    href: '/docs/systems/nintendo/game-boy/',
     image: '/media/boot/game-boy.png',
     caption: 'Cartridge boot capture. Set EMU198X_BOOT_GAME_BOY_ROM to publish this image.',
     capture: {
@@ -257,9 +273,9 @@ export const bootScreenshots = [
   },
   {
     id: 'dragon-32',
+    machineId: 'dragon',
     name: 'Dragon 32',
     group: 'Primary',
-    href: '/docs/systems/dragon/',
     image: '/media/boot/dragon-32.png',
     caption: 'Dragon BASIC prompt after the fixed-cycle boot window.',
     capture: {
@@ -278,9 +294,9 @@ export const bootScreenshots = [
   },
   {
     id: 'atari-800xl',
+    machineId: 'atari-800xl',
     name: 'Atari 800XL',
     group: 'Extended',
-    href: '/docs/systems/atari/800xl/',
     image: '/media/boot/atari-800xl.png',
     caption: 'Atari BASIC READY prompt.',
     capture: {
@@ -303,9 +319,9 @@ export const bootScreenshots = [
   },
   {
     id: 'msx1',
+    machineId: 'microsoft-msx1',
     name: 'MSX1',
     group: 'Extended',
-    href: '/docs/systems/msx/',
     image: '/media/boot/msx1.png',
     caption: 'MSX BASIC prompt with the function-key bar.',
     capture: {
@@ -316,9 +332,9 @@ export const bootScreenshots = [
   },
   {
     id: 'sega-master-system',
+    machineId: 'sega-master-system',
     name: 'Sega Master System',
     group: 'Extended',
-    href: '/docs/systems/sega/master-system/',
     image: '/media/boot/sega-master-system.png',
     caption: 'Cartridge title capture. Set EMU198X_BOOT_SMS_CART to publish this image.',
     capture: {
@@ -330,9 +346,9 @@ export const bootScreenshots = [
   },
   {
     id: 'sord-m5',
+    machineId: 'sord-m5',
     name: 'Sord M5',
     group: 'Extended',
-    href: '/docs/systems/sord/m5/',
     image: '/media/boot/sord-m5.png',
     caption: 'Cartridge title capture. Set EMU198X_BOOT_SORD_M5_CART to publish this image.',
     capture: {
@@ -345,9 +361,9 @@ export const bootScreenshots = [
   },
   {
     id: 'tatung-einstein',
+    machineId: 'tatung-einstein',
     name: 'Tatung Einstein',
     group: 'Extended',
-    href: '/docs/systems/tatung/einstein/',
     image: '/media/boot/tatung-einstein.png',
     caption: 'Tatung/Xtal MOS prompt.',
     capture: {
@@ -358,9 +374,9 @@ export const bootScreenshots = [
   },
   {
     id: 'commodore-vic-20',
+    machineId: 'commodore-vic-20',
     name: 'Commodore VIC-20',
     group: 'Extended',
-    href: '/docs/systems/commodore/vic-20/',
     image: '/media/boot/commodore-vic-20.png',
     caption: 'VIC-20 BASIC READY prompt.',
     capture: {
@@ -375,9 +391,9 @@ export const bootScreenshots = [
   },
   {
     id: 'commodore-pet',
+    machineId: 'commodore-pet',
     name: 'Commodore PET',
     group: 'Extended',
-    href: '/docs/systems/commodore/pet/',
     image: '/media/boot/commodore-pet.png',
     caption: 'PET BASIC READY prompt.',
     capture: {
@@ -406,9 +422,9 @@ export const bootScreenshots = [
   },
   {
     id: 'acorn-electron',
+    machineId: 'acorn-electron',
     name: 'Acorn Electron',
     group: 'Extended',
-    href: '/docs/systems/acorn/electron/',
     image: '/media/boot/acorn-electron.png',
     caption: 'Acorn Electron BASIC prompt.',
     capture: {
@@ -419,9 +435,9 @@ export const bootScreenshots = [
   },
   {
     id: 'oric-atmos',
+    machineId: 'oric',
     name: 'Oric Atmos',
     group: 'Extended',
-    href: '/docs/systems/oric/atmos/',
     image: '/media/boot/oric-atmos.png',
     caption: 'Oric Extended BASIC ready prompt.',
     capture: {
@@ -432,9 +448,9 @@ export const bootScreenshots = [
   },
   {
     id: 'memotech-mtx',
+    machineId: 'memotech-mtx',
     name: 'Memotech MTX',
     group: 'Extended',
-    href: '/docs/systems/memotech/mtx/',
     image: '/media/boot/memotech-mtx.png',
     caption: 'MTX BASIC ready prompt.',
     capture: {
@@ -445,9 +461,9 @@ export const bootScreenshots = [
   },
   {
     id: 'spectravideo-svi-328',
+    machineId: 'spectravideo-svi-328',
     name: 'Spectravideo SVI-328',
     group: 'Extended',
-    href: '/docs/systems/spectravideo/svi-328/',
     image: '/media/boot/spectravideo-svi-328.png',
     caption: 'SV-BASIC settled boot screen.',
     capture: {
@@ -458,9 +474,9 @@ export const bootScreenshots = [
   },
   {
     id: 'colecovision',
+    machineId: 'coleco-colecovision',
     name: 'ColecoVision',
     group: 'Extended',
-    href: '/docs/systems/coleco/colecovision/',
     image: '/media/boot/colecovision.png',
     caption: 'ColecoVision BIOS splash.',
     capture: {
@@ -471,9 +487,9 @@ export const bootScreenshots = [
   },
   {
     id: 'sega-sg-1000',
+    machineId: 'sega-sg-1000',
     name: 'Sega SG-1000',
     group: 'Extended',
-    href: '/docs/systems/sega/sg-1000/',
     image: '/media/boot/sega-sg-1000.png',
     caption: 'Cartridge title capture. Set EMU198X_BOOT_SG1000_CART to publish this image.',
     capture: {
@@ -485,9 +501,9 @@ export const bootScreenshots = [
   },
   {
     id: 'atari-2600',
+    machineId: 'atari-2600',
     name: 'Atari 2600',
     group: 'Extended',
-    href: '/docs/systems/atari/2600/',
     image: '/media/boot/atari-2600.png',
     caption: 'Cartridge boot capture. Set EMU198X_BOOT_ATARI_2600_CART to publish this image.',
     capture: {
@@ -499,9 +515,9 @@ export const bootScreenshots = [
   },
   {
     id: 'atari-5200',
+    machineId: 'atari-5200',
     name: 'Atari 5200',
     group: 'Extended',
-    href: '/docs/systems/atari/5200/',
     image: '/media/boot/atari-5200.png',
     caption: 'Cartridge boot capture. Set EMU198X_BOOT_ATARI_5200_CART to publish this image.',
     capture: {
@@ -514,9 +530,9 @@ export const bootScreenshots = [
   },
   {
     id: 'atari-7800',
+    machineId: 'atari-7800',
     name: 'Atari 7800',
     group: 'Extended',
-    href: '/docs/systems/atari/7800/',
     image: '/media/boot/atari-7800.png',
     caption: 'Cartridge boot capture. Set EMU198X_BOOT_ATARI_7800_CART to publish this image.',
     capture: {
@@ -529,9 +545,9 @@ export const bootScreenshots = [
   },
   {
     id: 'jupiter-ace',
+    machineId: 'jupiter-ace',
     name: 'Jupiter Ace',
     group: 'Extended',
-    href: '/docs/systems/jupiter/ace/',
     image: '/media/boot/jupiter-ace.png',
     caption: 'Jupiter Ace Forth input line.',
     capture: {
@@ -542,9 +558,9 @@ export const bootScreenshots = [
   },
   {
     id: 'acorn-atom',
+    machineId: 'acorn-atom',
     name: 'Acorn Atom',
     group: 'Extended',
-    href: '/docs/systems/acorn/atom/',
     image: '/media/boot/acorn-atom.png',
     caption: 'Acorn Atom prompt.',
     capture: {
@@ -555,9 +571,9 @@ export const bootScreenshots = [
   },
   {
     id: 'zx81',
+    machineId: 'sinclair-zx81',
     name: 'ZX81',
     group: 'Extended',
-    href: '/docs/systems/sinclair/zx81/',
     image: '/media/boot/zx81.png',
     caption: 'ZX81 boot screen.',
     capture: {
@@ -568,9 +584,9 @@ export const bootScreenshots = [
   },
   {
     id: 'zx80',
+    machineId: 'sinclair-zx80',
     name: 'ZX80',
     group: 'Extended',
-    href: '/docs/systems/sinclair/zx80/',
     image: '/media/boot/zx80.png',
     caption: 'ZX80 FAST-mode boot display.',
     capture: {
@@ -581,9 +597,9 @@ export const bootScreenshots = [
   },
   {
     id: 'mattel-aquarius',
+    machineId: 'mattel-aquarius',
     name: 'Mattel Aquarius',
     group: 'Extended',
-    href: '/docs/systems/mattel/aquarius/',
     image: '/media/boot/mattel-aquarius.png',
     caption: 'Aquarius BASIC start prompt.',
     capture: {
@@ -606,9 +622,9 @@ export const bootScreenshots = [
   },
   {
     id: 'acorn-bbc-micro',
+    machineId: 'acorn-bbc-micro',
     name: 'Acorn BBC Micro',
     group: 'Extended',
-    href: '/docs/systems/acorn/bbc-micro/',
     image: '/media/boot/acorn-bbc-micro.png',
     caption: 'BBC Micro MODE 7 boot banner.',
     capture: {
@@ -647,15 +663,18 @@ export function captureTargets() {
   ]);
 }
 
-function normalizeCaptureTarget(target, parent) {
+export function normalizeCaptureTarget(target, parent) {
   const kind = target.kind ?? 'boot';
-  const rightsNote = target.rightsNote ?? defaultRightsNote;
+  const hasImage = existsSync(publicImagePath(target.image));
+  // A rights note asserts a capture happened. Never carry one for a record
+  // whose image doesn't exist — that record is an intent, not evidence.
+  const rightsNote = hasImage ? (target.rightsNote ?? defaultRightsNote) : null;
   return {
     ...target,
     kind,
+    hasImage,
     title: target.title ?? `${target.name} ${captureKindLabels[kind]?.toLowerCase() ?? 'capture'}`,
     group: target.group ?? parent?.group,
-    href: target.href ?? parent?.href,
     systemId: parent?.id ?? target.systemId ?? target.id,
     systemName: parent?.name ?? target.systemName ?? target.name,
     variantId: parent ? target.id : target.variantId,

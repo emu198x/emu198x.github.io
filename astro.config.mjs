@@ -8,6 +8,9 @@ import { remarkRewriteMarkdownLinks } from './src/lib/remark-rewrite-md-links.mj
 export default defineConfig({
   site: 'https://emu198x.github.io',
   integrations: [mdx(), sitemap()],
+  redirects: {
+    '/docs/status/current-system-usability': '/accuracy/',
+  },
   markdown: {
     processor: unified({
       remarkPlugins: [remarkRewriteMarkdownLinks],

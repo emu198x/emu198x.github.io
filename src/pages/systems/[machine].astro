@@ -1,0 +1,192 @@
+---
+/**
+ * One page per registry machine.
+ *
+ * The route parameter is the registry's own machine_id, so the site's public
+ * vocabulary and the registry's are the same string. This is the one place to
+ * stop a fifth naming vocabulary spreading into URLs.
+ */
+import BaseLayout from '@layouts/BaseLayout.astro';
+import { loadSiteData } from '@lib/site-data.js';
+
+export async function getStaticPaths() {
+  const { fleet, evidence } = loadSiteData();
+  return fleet.map((entry) => ({
+    params: { machine: entry.machineId },
+    props: { entry, evidence: evidence.get(entry.machineId) },
+  }));
+}
+
+const { entry, evidence } = Astro.props;
+const boot = entry.captures.find((c) => c.kind === 'boot');
+// A capture record and a capture that exists are different states: boot may
+// be a record whose image was never generated (mediaEnv-gated, waiting on
+// local media the visitor does not have), so hasImage — computed once at
+// the model layer — decides whether the <img> renders at all.
+const pendingLabel = boot?.capture?.mediaEnv
+  ? 'Waiting on local media for this machine.'
+  : 'Capture pending for this machine.';
+---
+
+<BaseLayout
+  title={entry.machineId}
+  description={`Emu198x evidence for ${entry.machineId}: boot capture, crate coverage, and open work.`}
+>
+  <main class="container machine" data-pagefind-body>
+    <p class="eyebrow">System</p>
+    <h1>{entry.machineId}</h1>
+    <p class="lede">Ships from <code>{entry.crate}</code>.</p>
+
+    {boot && boot.hasImage ? (
+      <figure class="capture-figure">
+        <div class="frame">
+          <img src={boot.image} alt={boot.title} loading="lazy" />
+        </div>
+        <figcaption>
+          <span class="caption">{boot.caption}</span>
+          <span class="rights-note">{boot.rightsNote}</span>
+        </figcaption>
+      </figure>
+    ) : boot ? (
+      <p class="no-capture">{pendingLabel}</p>
+    ) : (
+      <p class="no-capture">No capture yet for this machine.</p>
+    )}
+
+    <h2>Evidence</h2>
+    <dl class="evidence">
+      <div class="evidence-row">
+        <dt>Own crates</dt>
+        <dd>{evidence.ownCrates}</dd>
+      </div>
+      <div class="evidence-row">
+        <dt>Shared crates</dt>
+        <dd>{evidence.sharedCrates}</dd>
+      </div>
+    </dl>
+    <p>
+      A crate in exactly one shipping closure is this machine's own, so its tests are
+      evidence about this machine. A shared crate is common to several and distinguishes
+      nothing.
+    </p>
+
+    <h2>Open work</h2>
+    <p class="open-work-links">
+      <a href={evidence.issuesUrl}>Open issues</a> ·
+      <a href={evidence.milestoneUrl}>Milestone</a>
+    </p>
+    <p>A closed milestone says its issues were closed. It says nothing about the machine.</p>
+  </main>
+</BaseLayout>
+
+<style>
+  .machine {
+    padding-top: 4rem;
+    padding-bottom: 4rem;
+    max-width: 720px;
+  }
+
+  h1 {
+    margin: 0;
+    font-size: clamp(2.25rem, 6vw, 3.5rem);
+    line-height: 0.98;
+  }
+
+  .lede {
+    font-size: 1.1rem;
+  }
+
+  .lede code {
+    color: var(--ink);
+  }
+
+  h2 {
+    margin-top: 2.5rem;
+  }
+
+  .capture-figure {
+    margin: 1.5rem 0 0;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--paper-strong);
+    box-shadow: inset 0 0 0 1px var(--line), var(--shadow-sm);
+  }
+
+  .frame {
+    display: grid;
+    min-height: 200px;
+    place-items: center;
+    background: #14161b;
+  }
+
+  .frame img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+
+  figcaption {
+    display: grid;
+    gap: 0.35rem;
+    padding: 1rem;
+  }
+
+  .caption {
+    color: var(--ink-muted);
+    font-size: 0.94rem;
+    line-height: 1.45;
+  }
+
+  .rights-note {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .no-capture {
+    margin: 1.5rem 0 0;
+    border-radius: var(--radius);
+    padding: 1rem;
+    background: var(--panel);
+    box-shadow: inset 0 0 0 1px var(--line);
+    color: var(--ink-muted);
+  }
+
+  .evidence {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    margin: 1rem 0 0;
+  }
+
+  .evidence-row {
+    min-width: 150px;
+    border-radius: var(--radius);
+    padding: 1rem;
+    background: var(--panel);
+    box-shadow: inset 0 0 0 1px var(--line), var(--shadow-sm);
+  }
+
+  .evidence dt {
+    margin: 0;
+    color: var(--ink-muted);
+    font-size: 0.85rem;
+  }
+
+  .evidence dd {
+    margin: 0.2rem 0 0;
+    color: var(--ink);
+    font-size: 1.5rem;
+    font-variant-numeric: tabular-nums;
+    line-height: 1.1;
+  }
+
+  .open-work-links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    font-weight: 650;
+  }
+</style>

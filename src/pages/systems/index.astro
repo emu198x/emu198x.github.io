@@ -1,33 +1,33 @@
 ---
-import { existsSync } from 'node:fs';
-import { join } from 'node:path';
 import BaseLayout from '@layouts/BaseLayout.astro';
-import { captureKindLabels, captureTargets } from '../../data/boot-screenshots.js';
+import { loadSiteData } from '../../lib/site-data.js';
 
-const publicPath = (path) => join(process.cwd(), 'public', path.replace(/^\//, ''));
-const captureKindOrder = Object.keys(captureKindLabels);
-const allTargets = captureTargets().map((target) => ({
-  ...target,
-  hasImage: existsSync(publicPath(target.image)),
-}));
-const captureName = (target) => target.variantName
-  ? `${target.systemName}: ${target.variantName}`
-  : target.systemName;
-const captureSections = captureKindOrder
-  .map((kind) => ({
-    kind,
-    label: captureKindLabels[kind],
-    targets: allTargets.filter((target) => target.kind === kind),
-  }))
-  .filter((section) => section.targets.length > 0);
+const { fleet } = loadSiteData();
 
-const capturedCount = allTargets.filter((target) => target.hasImage).length;
-const mediaPendingCount = allTargets.filter((target) => !target.hasImage && target.capture.mediaEnv).length;
-const catalogRows = [...allTargets].sort((left, right) => (
-  left.systemName.localeCompare(right.systemName)
-  || (left.variantName ?? '').localeCompare(right.variantName ?? '')
-  || left.kind.localeCompare(right.kind)
-));
+// hasImage is computed once, at the model layer (boot-screenshots.js's
+// normalizer), never re-derived here — a capture record and a capture that
+// exists are two different states. A record with no image is "waiting on
+// media", which is a different, equally honest state from "no record at
+// all" (amstrad-cpc, sega-game-gear): never collapse the two into one label.
+const cards = fleet.map((entry) => {
+  const capture = entry.captures[0] ?? null;
+  const hasImage = capture?.hasImage ?? false;
+  const state = !capture ? 'none' : hasImage ? 'captured' : 'waiting';
+  const pendingLabel = capture?.capture?.mediaEnv ? 'Waiting on local media' : 'Capture pending';
+  return { entry, capture, hasImage, state, pendingLabel };
+});
+
+const capturedCount = cards.filter((card) => card.state === 'captured').length;
+const uncapturedCount = cards.length - capturedCount;
+
+// Some machines cover more than one hardware variant, each with its own
+// capture and its own rights note — read per-machine from the fleet entry,
+// never re-driven from the site's flat capture list.
+const variantRows = fleet.flatMap((entry) => {
+  const capture = entry.captures[0];
+  if (!capture) return [];
+  return (capture.variants ?? []).map((variant) => ({ machineId: entry.machineId, variant }));
+});
 ---
 
 <BaseLayout title="System Matrix" description="Current Emu198x system support matrix.">
@@ -38,108 +38,101 @@ const catalogRows = [...allTargets].sort((left, right) => (
       <p>
         Emu198x separates support into capability surfaces. Primary systems have
         native windows; extended systems are headless but scriptable and
-        MCP-driven. This page shows repeatable captures for every supported
-        system as boot, BASIC, and software evidence becomes available.
+        MCP-driven. This page lists every machine in the flagship's registry,
+        with a boot capture where one exists.
       </p>
     </header>
 
-    <section class="stat-grid" aria-label="Screenshot summary">
-      <div class="stat"><strong>{capturedCount}</strong><span>captures published</span></div>
-      <div class="stat"><strong>{allTargets.length}</strong><span>targets tracked</span></div>
-      <div class="stat"><strong>{mediaPendingCount}</strong><span>waiting on local media</span></div>
+    <section class="stat-grid" aria-label="Registry summary">
+      <div class="stat"><strong>{cards.length}</strong><span>machines in the registry</span></div>
+      <div class="stat"><strong>{capturedCount}</strong><span>with a boot capture</span></div>
+      <div class="stat"><strong>{uncapturedCount}</strong><span>no capture yet</span></div>
     </section>
 
     <section class="panel">
       <div class="panel-heading">
         <div>
-          <p class="eyebrow">Capture gallery</p>
-          <h2>Current system captures</h2>
+          <p class="eyebrow">Registry</p>
+          <h2>Every machine, one card each</h2>
         </div>
         <a href="/accuracy/">Accuracy progress</a>
       </div>
-      <div class="capture-sections">
-        {captureSections.map((section) => (
-          <section class="capture-section" aria-labelledby={`capture-${section.kind}`}>
-            <div class="capture-section-heading">
-              <h3 id={`capture-${section.kind}`}>{section.label}</h3>
-              <span>
-                {section.targets.filter((target) => target.hasImage).length}
-                {' / '}
-                {section.targets.length}
-                {' published'}
-              </span>
+      <div class="capture-grid">
+        {cards.map(({ entry, capture, hasImage, state, pendingLabel }) => (
+          <article class="capture-card">
+            <a
+              class="frame"
+              href={`/systems/${entry.machineId}/`}
+              aria-label={`${entry.machineId} system page`}
+            >
+              {hasImage ? (
+                <img
+                  src={capture.image}
+                  alt={`${capture.title ?? `${capture.name} boot`} screenshot`}
+                  loading="lazy"
+                  decoding="async"
+                />
+              ) : (
+                <span>{capture ? pendingLabel : 'No capture yet'}</span>
+              )}
+            </a>
+            <div class="capture-card-copy">
+              <div>
+                <p class="tier">{entry.crate}</p>
+                <h3><a href={`/systems/${entry.machineId}/`}>{entry.machineId}</a></h3>
+              </div>
+              {hasImage && <p class="rights-note">{capture.rightsNote}</p>}
+              <p class="capture-state">
+                {state === 'captured' ? 'Capture available' : state === 'waiting' ? pendingLabel : 'No capture yet'}
+              </p>
             </div>
-            <div class="capture-grid">
-              {section.targets.map((target) => (
-                <article class="capture-card">
-                  <a class="frame" href={target.href} aria-label={`${captureName(target)} system docs`}>
-                    {target.hasImage ? (
-                      <img src={target.image} alt={`${target.title} screenshot`} loading="lazy" decoding="async" />
-                    ) : (
-                      <span>
-                        {target.capture.mediaEnv ? `${target.capture.mediaEnv}` : 'Capture pending'}
-                      </span>
-                    )}
-                  </a>
-                  <div class="capture-card-copy">
-                    <div>
-                      <p class="tier">{target.group}</p>
-                      <h4><a href={target.href}>{captureName(target)}</a></h4>
-                    </div>
-                    <p>{target.caption}</p>
-                    <p class={target.hasImage ? 'capture-state published' : 'capture-state pending'}>
-                      {target.hasImage ? 'Published capture' : target.capture.mediaEnv ? 'Waiting on local media' : 'Capture pending'}
-                    </p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
+          </article>
         ))}
       </div>
     </section>
 
-    <section class="panel">
-      <h2>Capture catalog</h2>
-      <p>
-        Screenshots are generated from the emulator source checkout with
-        {' '}<code>npm run capture:screenshots</code>. Media-dependent targets
-        are skipped until their environment variable is set locally.
-      </p>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>System</th><th>Capture</th><th>Type</th><th>Source</th><th>Evidence</th></tr></thead>
-          <tbody>
-            {catalogRows.map((target) => (
+    {variantRows.length > 0 && (
+      <section class="panel">
+        <div class="panel-heading">
+          <div>
+            <p class="eyebrow">Variant catalogue</p>
+            <h2>Machine variants with their own capture</h2>
+          </div>
+        </div>
+        <p>
+          Some machines in the registry cover more than one hardware variant,
+          each captured and rights-noted separately.
+        </p>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Machine variants and their captures">
+          <table>
+            <thead>
               <tr>
-                <td><a href={target.href}>{target.variantName ? `${target.systemName}: ${target.variantName}` : target.systemName}</a></td>
-                <td>
-                  <span class="catalog-title">{target.title}</span>
-                  <code>{target.provenance.runner}</code>
-                </td>
-                <td>{captureKindLabels[target.kind] ?? target.kind}</td>
-                <td>{target.provenance.source}</td>
-                <td>
-                  <span class="catalog-title">{target.provenance.intent}</span>
-                  <code>{target.provenance.output}</code>
-                  <span class="rights-note">{target.provenance.rightsNote}</span>
-                </td>
+                <th>Machine</th>
+                <th>Variant</th>
+                <th>Capture</th>
+                <th>Source</th>
+                <th>Rights note</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <section class="panel">
-      <h2>Next capture layers</h2>
-      <p>
-        The capture model now separates boot, BASIC, and software evidence.
-        BASIC captures can use small Emu198x-authored programs, while software
-        captures can be added from local media variables and captioned with the
-        title, publisher, year, and capture context.
-      </p>
-    </section>
+            </thead>
+            <tbody>
+              {variantRows.map(({ machineId, variant }) => (
+                <tr>
+                  <td><a href={`/systems/${machineId}/`}>{machineId}</a></td>
+                  <td>{variant.name}</td>
+                  <td>{variant.hasImage ? variant.title : `${variant.title} (waiting on local media)`}</td>
+                  <td>{variant.provenance.source}</td>
+                  <td class="rights-note-cell">
+                    {variant.hasImage
+                      ? variant.rightsNote
+                      : 'No capture yet — waiting on local media, so there is nothing to assert rights over.'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+    )}
   </main>
 </BaseLayout>
 
@@ -225,36 +218,6 @@ const catalogRows = [...allTargets].sort((left, right) => (
     text-align: center;
   }
 
-  .capture-sections {
-    display: grid;
-    gap: 1.5rem;
-  }
-
-  .capture-section {
-    min-width: 0;
-  }
-
-  .capture-section-heading {
-    display: flex;
-    align-items: baseline;
-    justify-content: space-between;
-    gap: 1rem;
-    margin-bottom: 0.85rem;
-  }
-
-  .capture-section-heading h3 {
-    margin: 0;
-    color: var(--ink);
-    font-size: 1.25rem;
-  }
-
-  .capture-section-heading span {
-    color: var(--ink-soft);
-    font-size: 0.86rem;
-    font-weight: 650;
-    white-space: nowrap;
-  }
-
   .capture-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -281,9 +244,10 @@ const catalogRows = [...allTargets].sort((left, right) => (
     font-weight: 750;
     letter-spacing: 0.08em;
     text-transform: uppercase;
+    font-family: var(--font-mono);
   }
 
-  h4 {
+  h3 {
     margin: 0;
     font-size: 1.05rem;
     line-height: 1.25;
@@ -301,50 +265,29 @@ const catalogRows = [...allTargets].sort((left, right) => (
     width: fit-content;
     border-radius: 999px;
     padding: 0.25rem 0.65rem;
+    background: var(--panel);
+    box-shadow: inset 0 0 0 1px var(--line);
     color: var(--ink-muted);
     font-size: 0.78rem;
     font-weight: 650;
     line-height: 1.25;
   }
 
-  .capture-state.published {
-    /* 0.06, not 0.1: composited over the §3b-tinted ground a 0.1 green gave
-       #dbe5de, where --ink-muted measures 4.41:1. */
-    background: rgba(22, 101, 52, 0.06);
-    box-shadow: inset 0 0 0 1px rgba(22, 101, 52, 0.2);
-  }
-
-  .capture-state.pending {
-    background: rgba(198, 63, 49, 0.08);
-    box-shadow: inset 0 0 0 1px rgba(198, 63, 49, 0.18);
+  .rights-note {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.84rem;
+    line-height: 1.45;
   }
 
   .table-wrap {
     overflow-x: auto;
   }
 
-  .catalog-title {
-    display: block;
-    margin-bottom: 0.25rem;
-    font-weight: 650;
-  }
-
-  td:first-child,
-  th:first-child {
-    min-width: 220px;
-  }
-
-  td:nth-child(2),
-  td:nth-child(4),
-  td:nth-child(5) {
-    min-width: 220px;
-  }
-
-  .rights-note {
-    display: block;
-    margin-top: 0.35rem;
+  .rights-note-cell {
+    min-width: 260px;
     color: var(--ink-soft);
-    font-size: 0.84rem;
+    font-size: 0.86rem;
     line-height: 1.45;
   }
 
@@ -352,12 +295,6 @@ const catalogRows = [...allTargets].sort((left, right) => (
     .panel-heading {
       align-items: start;
       flex-direction: column;
-    }
-
-    .capture-section-heading {
-      align-items: start;
-      flex-direction: column;
-      gap: 0.35rem;
     }
 
     .capture-grid {
