@@ -393,9 +393,15 @@ const machineCount = fleet.length;
 
   <p>
     Both spellings of the address work — <code>D020</code> and{' '}
-    <code>0x0400</code> resolve alike. On the other {machineCount - 1} machines
-    there is no memory path, and <code>memory_read</code> takes an address and
-    a length instead.
+    <code>0x0400</code> resolve alike, and no other machine takes an address
+    this way. The <a href="/systems/commodore-amiga/">Amiga</a> is the one
+    other machine publishing anything under <code>memory.</code>, and its
+    twelve entries are fixed names for the memory map rather than a byte you
+    choose: <code>memory.chip_ram.size_bytes</code>,{' '}
+    <code>memory.rom.kind</code>, <code>memory.overlay</code>. The remaining
+    {' '}{machineCount - 2} machines publish nothing under that prefix at all.
+    Reading a byte anywhere but the C64 is <code>memory_read</code>, which
+    takes an address and a length.
   </p>
 
   <h3>Watching a window of time</h3>
