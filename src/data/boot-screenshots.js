@@ -666,6 +666,26 @@ export const bootScreenshots = [
     },
   },
   {
+    id: 'amstrad-cpc',
+    machineId: 'amstrad-cpc',
+    name: 'Amstrad CPC 464',
+    kind: 'boot',
+    title: 'Amstrad CPC 464 boot',
+    group: 'Extended',
+    image: '/media/boot/amstrad-cpc.png',
+    caption: 'CPC 464 firmware boot capture.',
+    rightsNote: 'Captured from locally supplied firmware or media. Emu198x does not distribute ROMs, disks, tapes, or cartridges.',
+    capture: {
+      package: 'emu198x-amstrad-cpc',
+      args: [
+        '--rom', `${romRoot}/amstrad-cpc/cpc464.rom`,
+        '--frames', '300',
+        '--screenshot', '{output}',
+      ],
+      requiredFiles: [`${romRoot}/amstrad-cpc/cpc464.rom`],
+    },
+  },
+  {
     id: 'acorn-bbc-micro',
     machineId: 'acorn-bbc-micro',
     name: 'Acorn BBC Micro',
