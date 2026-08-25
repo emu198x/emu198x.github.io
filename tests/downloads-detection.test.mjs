@@ -260,6 +260,21 @@ function buildDocument() {
 }
 
 // A link a reader can reach: still in the tree, and no ancestor hiding it.
+/**
+ * Every download the page still offers, by any route a person could take.
+ *
+ * "Reachable" is deliberately wider than "visible". A link that is on screen
+ * but carries aria-hidden is gone for a screen reader; one with tabindex="-1"
+ * is gone for the keyboard. Both leave the DOM untouched, so a check that only
+ * looked at display and visibility would call them reachable and let the page
+ * quietly stop offering 90 of its 120 archives to some of its readers.
+ *
+ * Known limit, stated rather than left to be discovered: this walks the tree,
+ * it does not lay it out. Hiding by clipping — height 0 with overflow hidden,
+ * or moving an item off-screen — is invisible here, and would need a real
+ * layout engine to catch. The property is "still offered", and geometry is
+ * the part of that this cannot see.
+ */
 function reachableDownloads(root) {
   const found = [];
   const walk = (node) => {
@@ -267,7 +282,10 @@ function reachableDownloads(root) {
     const display = node.style?.display ?? '';
     const visibility = node.style?.visibility ?? '';
     if (display === 'none' || visibility === 'hidden') return;
+    if (node.getAttribute?.('aria-hidden') === 'true') return;
+    if (node.getAttribute?.('inert') !== null && node.getAttribute?.('inert') !== undefined) return;
     if (node.tagName === 'A' && (node.getAttribute('href') ?? '').includes('/releases/download/')) {
+      if (node.getAttribute('tabindex') === '-1') return;
       found.push(node.getAttribute('href'));
     }
     for (const child of node.childNodes) walk(child);
