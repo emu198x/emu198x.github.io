@@ -35,12 +35,27 @@ export function buildFleet({ machines, captures }) {
   return [...byMachine.values()].sort((a, b) => a.machineId.localeCompare(b.machineId));
 }
 
-// "Captured" means an image exists, not that a record does — the same
-// definition the systems page uses. A record gated on local media is a real
-// and honest state, but it is not a capture, and counting it as one is how a
-// page and its own helper end up reporting different totals for one fleet.
+// One definition of "captured", asked in one place.
+//
+// Captured means THE BOOT CAPTURE HAS AN IMAGE. Not any capture: a game
+// screenshot is not evidence that a machine boots, so counting any capture
+// would let a software screenshot mask a machine that never booted. And not
+// captures[0]: a positional pick answers by array order, which is not a fact
+// about the machine at all.
+//
+// The rule lived in three places — this helper, the systems page, the accuracy
+// page — and they agreed only because every machine currently has exactly one
+// capture, of kind boot. The first software capture would have split them.
+export function bootCapture(entry) {
+  return entry.captures.find((capture) => capture.kind === 'boot') ?? null;
+}
+
+// A record gated on local media is a real and honest state, but it is not a
+// capture: hasImage, computed once at the model layer, is the measurement.
+export function isCaptured(entry) {
+  return bootCapture(entry)?.hasImage === true;
+}
+
 export function uncaptured(fleet) {
-  return fleet
-    .filter((entry) => !entry.captures.some((capture) => capture.hasImage))
-    .map((entry) => entry.machineId);
+  return fleet.filter((entry) => !isCaptured(entry)).map((entry) => entry.machineId);
 }

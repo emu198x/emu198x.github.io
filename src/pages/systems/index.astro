@@ -1,9 +1,17 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { loadSiteData } from '../../lib/site-data.js';
+import { bootCapture, isCaptured } from '@lib/fleet.js';
 
 const { fleet } = loadSiteData();
 
+// What this page calls a capture is the machine's BOOT capture, asked for by
+// kind through the fleet module — never a positional pick from entry.captures,
+// which answers by array order rather than by anything true about the machine,
+// and would let a software screenshot stand in for a boot the machine never
+// completed. That pick drove the card's image and rights note too, not just
+// the count.
+//
 // hasImage is computed once, at the model layer (boot-screenshots.js's
 // normalizer), never re-derived here — a capture record and a capture that
 // exists are two different states. A record with no image is "waiting on
@@ -12,8 +20,8 @@ const { fleet } = loadSiteData();
 // the Sord M5 holds a record it cannot yet fill, because its Monitor ROM
 // paints nothing without a cartridge.
 const cards = fleet.map((entry) => {
-  const capture = entry.captures[0] ?? null;
-  const hasImage = capture?.hasImage ?? false;
+  const capture = bootCapture(entry);
+  const hasImage = isCaptured(entry);
   const state = !capture ? 'none' : hasImage ? 'captured' : 'waiting';
   const pendingLabel = capture?.capture?.mediaEnv ? 'Waiting on local media' : 'Capture pending';
   return { entry, capture, hasImage, state, pendingLabel };
@@ -34,14 +42,14 @@ const uncapturedNotes = uncapturedCards.map(({ entry, capture }) => {
   const mediaLabel = capture.capture?.mediaLabel ?? 'media';
   return mediaEnv
     ? `${entry.machineId} (waiting on a locally supplied ${mediaLabel} — set ${mediaEnv} to publish it)`
-    : `${entry.machineId} (capture attempted, no image yet)`;
+    : `${entry.machineId} (no image yet)`;
 });
 
 // Some machines cover more than one hardware variant, each with its own
 // capture and its own rights note — read per-machine from the fleet entry,
 // never re-driven from the site's flat capture list.
 const variantRows = fleet.flatMap((entry) => {
-  const capture = entry.captures[0];
+  const capture = bootCapture(entry);
   if (!capture) return [];
   return (capture.variants ?? []).map((variant) => ({ machineId: entry.machineId, variant }));
 });
@@ -108,7 +116,7 @@ const variantRows = fleet.flatMap((entry) => {
       </div>
       {uncapturedCount > 0 ? (
         <p class="uncaptured-note">
-          {uncapturedCount} of {cards.length} machines in the registry still has no capture:{' '}
+          {uncapturedCount} of {cards.length} machines in the registry {uncapturedCount === 1 ? 'still has' : 'still have'} no capture:{' '}
           {uncapturedNotes.join('; ')}.
           {uncapturedCards.some((card) => card.entry.machineId === 'sord-m5') && (
             <>

@@ -8,6 +8,7 @@
  */
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { loadSiteData } from '@lib/site-data.js';
+import { bootCapture, isCaptured } from '@lib/fleet.js';
 
 export async function getStaticPaths() {
   const { fleet, evidence } = loadSiteData();
@@ -18,11 +19,15 @@ export async function getStaticPaths() {
 }
 
 const { entry, evidence } = Astro.props;
-const boot = entry.captures.find((c) => c.kind === 'boot');
+// The boot capture, asked for by kind through the fleet module — the one
+// definition of "captured" this site has, shared with /systems/ and
+// /accuracy/ so all three answer the same for the same fleet.
+const boot = bootCapture(entry);
 // A capture record and a capture that exists are different states: boot may
 // be a record whose image was never generated (mediaEnv-gated, waiting on
 // local media the visitor does not have), so hasImage — computed once at
 // the model layer — decides whether the <img> renders at all.
+const captured = isCaptured(entry);
 const pendingLabel = boot?.capture?.mediaEnv
   ? 'Waiting on local media for this machine.'
   : 'Capture pending for this machine.';
@@ -37,7 +42,7 @@ const pendingLabel = boot?.capture?.mediaEnv
     <h1>{entry.machineId}</h1>
     <p class="lede">Ships from <code>{entry.crate}</code>.</p>
 
-    {boot && boot.hasImage ? (
+    {captured ? (
       <figure class="capture-figure">
         <div class="frame">
           <img src={boot.image} alt={boot.title} loading="lazy" />
