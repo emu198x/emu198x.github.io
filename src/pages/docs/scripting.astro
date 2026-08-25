@@ -275,6 +275,15 @@ const machineCount = fleet.length;
   </p>
 
   <p>
+    Two machines have no second help screen: the{' '}
+    <a href="/systems/sinclair-zx80/">ZX80</a> and the{' '}
+    <a href="/systems/sinclair-zx81/">ZX81</a> reject <code>--headless</code>
+    {' '}outright. Their scripting works — <code>--script</code> takes the same
+    vocabulary there as everywhere else — so a script written for another
+    machine still runs. Their flags are readable only from the source.
+  </p>
+
+  <p>
     <strong>Its query paths.</strong> A <code>query_paths</code> step lists
     every path the machine publishes, and takes an optional <code>prefix</code>{' '}
     to keep the answer short. Ask before hard-coding: a Spectrum publishes 65
