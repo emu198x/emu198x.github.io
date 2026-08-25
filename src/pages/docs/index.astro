@@ -1,17 +1,91 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
+
+/**
+ * The automation set leads because it is what the suite is for: a machine you
+ * can drive from another program. Observability sits with the other three
+ * rather than under "everything else" — it is the reading half of the same
+ * job, and a script that cannot see the machine is back to guessing.
+ *
+ * Each line states the question the page answers, so a reader picks one page
+ * instead of opening all seven.
+ */
+const automation = [
+  {
+    label: 'MCP',
+    href: '/docs/mcp/',
+    answers: 'How does an agent or a build pipeline drive a machine over stdio?',
+  },
+  {
+    label: 'Scripting',
+    href: '/docs/scripting/',
+    answers: 'How does a JSON file of steps run a machine unattended?',
+  },
+  {
+    label: 'Capture',
+    href: '/docs/capture/',
+    answers: 'How does a run write out a picture, a frame sequence or audio?',
+  },
+  {
+    label: 'Observability',
+    href: '/docs/observability/',
+    answers: 'How do you read what a chip is doing while the machine runs?',
+  },
+];
+
+const rest = [
+  {
+    label: 'Getting started',
+    href: '/docs/getting-started/',
+    answers: 'Which binary do you need, where does its firmware go, and what happens on first boot?',
+  },
+  {
+    label: 'Downloads',
+    href: '/downloads/',
+    answers: 'Which release archives exist, and which machines are in them?',
+  },
+  {
+    label: 'Changelog',
+    href: '/docs/changelog/',
+    answers: 'What changed in each release?',
+  },
+];
 ---
 
 <BaseLayout title="Docs" description="Public Emu198x documentation index.">
   <main class="container docs-index" data-pagefind-body>
     <p class="eyebrow">Public docs</p>
     <h1>Documentation</h1>
-    <div class="link-grid" data-pagefind-ignore>
-      <a href="/docs/getting-started/">Getting started</a>{' '}
-      <a href="/downloads/">Downloads</a>{' '}
-      <a href="/docs/changelog/">Changelog</a>{' '}
-      <a href="/docs/status/current-system-usability/">Current usability matrix</a>{' '}
-      <a href="/accuracy/">Accuracy progress</a>
+
+    <p class="lede">
+      Emu198x is one emulator binary per machine, and every one of them can be
+      driven by another program instead of by hand. The first four pages cover
+      that half of the suite. The three after them cover running a machine
+      yourself, getting the binaries, and what changed.
+    </p>
+
+    <h2>Automation</h2>
+    <div class="link-grid">
+      {automation.map((page) => (
+        <>
+          <a href={page.href}>
+            <span class="link-label">{page.label}</span>
+            <span class="link-answers">{page.answers}</span>
+          </a>{' '}
+        </>
+      ))}
+    </div>
+
+    <h2>Everything else</h2>
+    <div class="link-grid">
+      {rest.map((page) => (
+        <>
+          <a href={page.href}>
+            <span class="link-label">{page.label}</span>
+            <span class="link-answers">{page.answers}</span>
+          </a>{' '}
+        </>
+      ))}
     </div>
   </main>
 </BaseLayout>
@@ -19,36 +93,64 @@ import BaseLayout from '@layouts/BaseLayout.astro';
 <style>
   .docs-index {
     padding-top: 4rem;
+    padding-bottom: 4rem;
   }
 
   h1 {
-    margin: 0 0 2rem;
+    margin: 0 0 1.5rem;
     font-size: clamp(3rem, 8vw, 6rem);
     line-height: 0.92;
+  }
+
+  .lede {
+    max-width: 62ch;
+    margin: 0 0 2.5rem;
+    font-size: 1.08rem;
+    line-height: 1.6;
+  }
+
+  h2 {
+    margin: 0 0 1rem;
+    font-size: 1.35rem;
   }
 
   .link-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
     gap: 0.8rem;
+    margin-bottom: 2.5rem;
   }
 
   .link-grid a {
     display: flex;
     min-height: 76px;
-    align-items: center;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0.35rem;
     border-radius: var(--radius);
     padding: 1rem;
     background: var(--panel);
     color: var(--ink);
-    font-weight: 700;
     text-decoration: none;
     box-shadow: inset 0 0 0 1px var(--line), var(--shadow-sm);
   }
 
+  .link-label {
+    font-weight: 700;
+  }
+
+  .link-answers {
+    color: var(--ink-muted);
+    font-size: 0.92rem;
+    line-height: 1.45;
+  }
+
   @media (hover: hover) and (pointer: fine) {
-    .link-grid a:hover {
+    .link-grid a:hover .link-label {
       color: var(--accent-strong);
+    }
+
+    .link-grid a:hover {
       box-shadow: inset 0 0 0 1px var(--accent), var(--shadow-sm);
     }
   }

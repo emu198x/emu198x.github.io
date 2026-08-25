@@ -3,7 +3,18 @@ import { join } from 'node:path';
 
 const siteRoot = new URL('..', import.meta.url).pathname.replace(/\/$/, '');
 const distRoot = join(siteRoot, 'dist');
-const joinedLinkPattern = /[A-Za-z0-9)]<a\b|<\/a>[A-Za-z0-9(]|<\/a>,<a\b|<\/a><a\b|(?:and|or)<a\b/g;
+// Astro drops the newline before a tag that begins a source line, so an
+// inline tag written at the start of a line renders glued to the word before
+// it. This checked <a> only, which meant the same bug in <code> shipped
+// unnoticed and was caught by a person looking at a screenshot. Any inline
+// tag can be written at the start of a line, so any of them can be glued.
+const INLINE = 'a|code|strong|em';
+const joinedLinkPattern = new RegExp(
+  `[A-Za-z0-9)]<(?:${INLINE})\\b` +
+    `|</(?:${INLINE})>[A-Za-z0-9(]` +
+    `|</a>,<a\\b|</a><a\\b|(?:and|or)<a\\b`,
+  'g',
+);
 const failures = [];
 let pageCount = 0;
 

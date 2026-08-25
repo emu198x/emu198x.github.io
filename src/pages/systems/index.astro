@@ -60,11 +60,27 @@ const variantRows = fleet.flatMap((entry) => {
     <header>
       <p class="eyebrow">Fleet status</p>
       <h1>System matrix</h1>
+      {/*
+        0.5.0 is a literal here on purpose, and must stay one. The sentence
+        below is a run report: thirty Apple silicon archives from that release
+        were downloaded and started, and twenty were watched opening a window.
+        Deriving the number from the changelog would move it to whatever is
+        current — v0.6.0 shipped the day after the run — and restate the
+        finding against binaries nobody has started. The release the evidence
+        came from is the only version this sentence can name. Everything else
+        on the site that names the current release keeps deriving it.
+      */}
       <p>
-        Emu198x separates support into capability surfaces. Primary systems have
-        native windows; extended systems are headless but scriptable and
-        MCP-driven. This page lists every machine in the flagship's registry,
-        with a boot capture where one exists.
+        Emu198x separates support into capability surfaces. Primary systems
+        carry the full desktop experience alongside capture, scripting and MCP;
+        extended systems came from the same work with those three surfaces
+        first, and how far each one boots still varies. Neither tier is
+        headless by design: all thirty of release 0.5.0's Apple silicon
+        builds offer a window scale and a video mode, and twenty of them were
+        run and opened a native window. The other ten stop first for want of a
+        cartridge or a ROM, which cuts across both tiers rather than along
+        them. This page lists every machine in the flagship's registry, with a
+        boot capture where one exists.
       </p>
     </header>
 

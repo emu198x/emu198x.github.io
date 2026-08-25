@@ -1,19 +1,19 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { loadSiteData } from '@lib/site-data.js';
-import { countByGroup } from '@lib/fleet.js';
+import { bootCapture, countByGroup, isCaptured } from '@lib/fleet.js';
 
-// Measured from the registry, never typed here. These three numbers were
-// literals — 6 / 22 / 28 — and this branch made them wrong: the fleet is 6
-// primary and 24 extended, so / would have said 28 runtimes while /systems/
-// said 30 machines in the same build. 28 is the stale figure fleet.js names as
-// the bug this rebuild exists to remove, so it must not be re-typed with
-// today's values; it has to come from the same data /systems/ counts.
+// Measured from the registry, never typed here. These numbers were literals —
+// 6 / 22 / 28 — and this branch made them wrong: the fleet is 6 primary and 24
+// extended, so / would have said 28 runtimes while /systems/ said 30 machines
+// in the same build. 28 is the stale figure fleet.js names as the bug this
+// rebuild exists to remove, so it must not be re-typed with today's values; it
+// has to come from the same data /systems/ counts.
 //
 // Primary and Extended are counted strictly, from each machine's own boot
 // capture. Neither is derived as the other's remainder: a machine whose
 // surface is not stated would then be silently filed under one of them, which
-// is the kind of unmeasured claim this page just stopped making.
+// is the kind of unmeasured claim this page stopped making.
 const { fleet } = loadSiteData();
 const groups = countByGroup(fleet);
 const primaryCount = groups.get('Primary') ?? 0;
@@ -21,6 +21,28 @@ const extendedCount = groups.get('Extended') ?? 0;
 // Every machine in the registry ships as a scriptable, MCP-driven runtime,
 // primary and extended alike — so this is the registry's own size.
 const runtimeCount = fleet.length;
+// isCaptured is the fleet's one definition of a published capture: a boot
+// capture with an image on disk. /systems/ and /accuracy/ ask the same
+// question through the same helper, so the three pages cannot disagree about
+// how much of the fleet has actually been photographed.
+const capturedCount = fleet.filter(isCaptured).length;
+
+// The demonstration below shows one frame and claims a script reproduces it,
+// so the image, its caption and its rights note come from the same record
+// /systems/ renders rather than being re-typed beside it.
+//
+// If that capture ever loses its image the build stops here. The alternative
+// is a homepage whose one piece of evidence is a broken image, on a site whose
+// entire argument is that its claims are checkable — so this fails loudly and
+// the section gets rewritten around a run that happened.
+const demoMachine = fleet.find((entry) => entry.machineId === 'nintendo-game-boy');
+const demo = demoMachine ? bootCapture(demoMachine) : null;
+if (!demo?.hasImage) {
+  throw new Error(
+    'index: the homepage demonstration publishes the Game Boy boot capture, and that capture has no image. ' +
+      'Rewrite the section around a run that happened rather than shipping a frame the fleet no longer holds.',
+  );
+}
 ---
 
 <BaseLayout title="Emu198x" description="A public evidence site for the Emu198x multi-system emulator suite.">
@@ -31,57 +53,129 @@ const runtimeCount = fleet.length;
           <p class="eyebrow">Multi-system emulator suite</p>
           <h1>Emu198x</h1>
           <p class="lede">
-            Cycle-accurate vintage computers and consoles with one deterministic
-            automation surface, public accuracy evidence, and hardware-aware
-            documentation.
+            Drive any of {runtimeCount} vintage computers and consoles from a
+            JSON script or an MCP client, and get the same frames back every
+            time.
           </p>
           <div class="actions">
             <a class="button primary" href="/downloads/">Download</a>{' '}
             <a class="button secondary" href="/docs/getting-started/">Get started</a>{' '}
-            <a class="button secondary" href="/accuracy/">Accuracy progress</a>{' '}
-            <a class="button secondary" href="/systems/">System matrix</a>
+            <a class="button secondary" href="/docs/scripting/">Scripting</a>{' '}
+            <a class="button secondary" href="/docs/mcp/">MCP</a>
           </div>
         </div>
         <div class="evidence-panel" aria-label="Current Emu198x support summary">
           <div class="panel-header">
             <span class="pill">Current fleet</span>
-            <span>July 2026</span>
+            <span>Counted from the registry</span>
           </div>
           <div class="stat-grid">
             <div class="stat"><strong>{primaryCount}</strong><span>primary systems</span></div>
             <div class="stat"><strong>{extendedCount}</strong><span>extended systems</span></div>
-            <div class="stat"><strong>{runtimeCount}</strong><span>MCP-driven runtimes</span></div>
-            <div class="stat"><strong>All</strong><span>supported systems tracked</span></div>
+            <div class="stat"><strong>{runtimeCount}</strong><span>scriptable, MCP-driven runtimes</span></div>
+            <div class="stat"><strong>{capturedCount}</strong><span>published boot captures</span></div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="container section-grid" aria-label="Project priorities">
+    <section class="demo" aria-labelledby="demo-heading">
+      <div class="container demo-grid">
+        <div class="demo-copy">
+          <p class="eyebrow">One run, start to finish</p>
+          <h2 id="demo-heading">This script drew that frame.</h2>
+          <p>
+            Three steps: run 300 Game Boy frames, read the program counter, save
+            a PNG. No window opens and nobody watches it happen. The cartridge
+            is built from source in this project, so the run needs no firmware
+            and no software you have to go and find.
+          </p>
+
+          <pre tabindex="0"><code>[
+  &lbrace;"action":"run_frames","frames":300&rbrace;,
+  &lbrace;"action":"query","path":"cpu.pc"&rbrace;,
+  &lbrace;"action":"save_screenshot","path":"game-boy.png"&rbrace;
+]</code></pre>
+
+          <p>Hand it to the Game Boy binary, with the cartridge from the checkout:</p>
+
+          <pre tabindex="0"><code>./emu198x-game-boy \
+  --rom test-data/synthetic-cartridges/nintendo-game-boy-logo.gb \
+  --script boot.json</code></pre>
+
+          <p>
+            One JSON report comes back on standard output. Every step that has
+            something to report answers with what the machine did, rather than a
+            promise that it did something. Its two observations, wrapped to fit
+            this column:
+          </p>
+
+          <pre tabindex="0"><code>&lbrace;"kind":"run_frames","frames":300,
+ "reached":5285633,"stop_reason":"ReachedTarget"&rbrace;
+&lbrace;"kind":"query",
+ "result":&lbrace;"path":"cpu.pc","value":408&rbrace;&rbrace;</code></pre>
+
+          <p>
+            That frame is the PNG the run wrote, and it is the file this site
+            publishes for the Game Boy. Run the script again and the report
+            comes back identical, down to the tick the machine stopped on, and
+            the image matches byte for byte.
+          </p>
+
+          <p>
+            <a href="/docs/scripting/">Scripting</a> covers the step vocabulary
+            and where an open-loop file stops being enough.{' '}
+            <a href="/docs/mcp/">MCP</a> covers the same session when the next
+            step depends on the last answer, and{' '}
+            <a href="/docs/capture/">capture</a> covers what a machine can hand
+            back besides a screenshot.
+          </p>
+        </div>
+
+        <figure class="capture-figure">
+          <div class="frame">
+            <img src={demo.image} alt={demo.title} width="160" height="144" />
+          </div>
+          <figcaption>
+            <span class="caption">{demo.caption}</span>
+            <span class="rights-note">{demo.rightsNote}</span>
+          </figcaption>
+        </figure>
+      </div>
+    </section>
+
+    <section class="container section-grid" aria-label="Where to go next">
       <article>
-        <p class="eyebrow">Accuracy</p>
-        <h2>Claims backed by dashboards.</h2>
+        <p class="eyebrow">What it runs</p>
+        <h2>{runtimeCount} machines, {capturedCount} of them captured.</h2>
         <p>
-          The site exists to make emulator claims inspectable across every
-          supported system: test canons, pass rates, known failures,
-          compatibility sweeps, and measurement provenance.
+          Each machine has a page carrying its boot frame, the crates it ships
+          from, and the work still open against it. A machine with no capture
+          yet says so on the same page.
         </p>
+        <p class="more"><a href="/systems/">System matrix</a></p>
       </article>
       <article>
-        <p class="eyebrow">Tooling</p>
-        <h2>One control surface across the fleet.</h2>
+        <p class="eyebrow">How accurate it is</p>
+        <h2>A frame is graded by what it was checked against.</h2>
         <p>
-          Capture, scripting, snapshots, and MCP let tools and agents drive
-          different machines consistently without flattening their internals.
+          Hardware capture, hardware-validated test image, reference emulator,
+          or a self-minted golden that catches drift and settles nothing. Which
+          one backs a machine is written down per machine.
         </p>
+        <p class="more"><a href="/accuracy/">Accuracy progress</a></p>
       </article>
       <article>
-        <p class="eyebrow">Scope</p>
-        <h2>Machine-specific timing stays machine-specific.</h2>
+        <p class="eyebrow">How to get it</p>
+        <h2>One binary per machine, prebuilt for every desktop.</h2>
         <p>
-          Shared infrastructure lives above the cores. Video, audio, DMA, media,
-          and bus arbitration stay in the family that owns the hardware.
+          Every one of the {runtimeCount} machines ships an archive in each
+          release — macOS on Apple silicon and Intel, Windows, and Linux.
+          Extended machines are not the exception: they are built and published
+          with the rest. A source checkout gives the same binaries, and every
+          binary takes the same scripts either way.
         </p>
+        <p class="more"><a href="/downloads/">Downloads</a></p>
       </article>
     </section>
   </main>
@@ -97,7 +191,10 @@ const runtimeCount = fleet.length;
 
   .hero-grid {
     display: grid;
-    min-height: calc(100svh - 64px);
+    /* Short of a full screen on purpose. The worked example below is the
+       page's argument, and a hero that filled the viewport hid every trace of
+       it until the reader guessed there was more. */
+    min-height: calc(84svh - 64px);
     grid-template-columns: minmax(0, 1.05fr) minmax(320px, 0.95fr);
     gap: 4rem;
     align-items: center;
@@ -159,6 +256,13 @@ const runtimeCount = fleet.length;
     box-shadow: inset 0 0 0 1px var(--line), var(--shadow-md);
   }
 
+  /* Four figures in a panel this wide: the shared auto-fit grid puts three on
+     the first row and leaves the fourth alone, which reads as a stray rather
+     than as one of a set. */
+  .evidence-panel .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .panel-header {
     display: flex;
     align-items: center;
@@ -167,6 +271,87 @@ const runtimeCount = fleet.length;
     margin-bottom: 0.9rem;
     color: var(--ink-soft);
     font-size: 0.9rem;
+  }
+
+  .demo {
+    border-bottom: 1px solid var(--line);
+  }
+
+  .demo-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr);
+    gap: 3rem;
+    align-items: start;
+    padding-block: 4rem;
+  }
+
+  /* Both columns need it: the code blocks scroll inside the left column rather
+     than widening it, and the figure's image is bounded by the right one. */
+  .demo-copy,
+  .capture-figure {
+    min-width: 0;
+  }
+
+  .demo-copy h2 {
+    margin: 0 0 1rem;
+    color: var(--ink);
+    font-size: clamp(1.8rem, 3.6vw, 2.6rem);
+    line-height: 1.06;
+  }
+
+  /* The code column is the wider of the two and its type is a size down from
+     the documentation's: the longest line here is a real cartridge path, and
+     at 0.88rem it slid under its own scrollbar at 1024. */
+  .demo-copy pre {
+    margin: 1.2rem 0;
+    font-size: 0.85rem;
+    line-height: 1.6;
+  }
+
+  .capture-figure {
+    position: sticky;
+    top: 90px;
+    margin: 0;
+    overflow: hidden;
+    border-radius: var(--radius);
+    background: var(--panel);
+    box-shadow: inset 0 0 0 1px var(--line), var(--shadow-sm);
+  }
+
+  /* The screen the machine painted, on the ground a screen is seen against.
+     Fixed rather than themed: the frame is a photograph of hardware output,
+     and a light backdrop would report its black pixels as page colour. */
+  .frame {
+    display: grid;
+    min-height: 200px;
+    place-items: center;
+    background: #14161b;
+  }
+
+  .frame img {
+    width: 100%;
+    height: auto;
+    object-fit: contain;
+    image-rendering: pixelated;
+  }
+
+  figcaption {
+    display: grid;
+    gap: 0.35rem;
+    padding: 1rem;
+  }
+
+  .caption {
+    color: var(--ink-muted);
+    font-size: 0.94rem;
+    line-height: 1.45;
+  }
+
+  .rights-note {
+    display: block;
+    color: var(--ink-soft);
+    font-size: 0.84rem;
+    line-height: 1.45;
   }
 
   .section-grid {
@@ -190,6 +375,10 @@ const runtimeCount = fleet.length;
     margin-bottom: 0;
   }
 
+  .more {
+    font-weight: 650;
+  }
+
   @media (hover: hover) and (pointer: fine) {
     .primary:hover {
       background: var(--accent-strong);
@@ -204,6 +393,7 @@ const runtimeCount = fleet.length;
 
   @media (max-width: 900px) {
     .hero-grid,
+    .demo-grid,
     .section-grid {
       grid-template-columns: 1fr;
     }
@@ -211,6 +401,18 @@ const runtimeCount = fleet.length;
     .hero-grid {
       min-height: auto;
       gap: 2rem;
+    }
+
+    .demo-grid {
+      gap: 2rem;
+    }
+
+    /* The evidence goes first once the two columns stack: a reader on a
+       phone should meet the frame before the file that drew it, rather than
+       scrolling three code blocks on trust. */
+    .capture-figure {
+      position: static;
+      order: -1;
     }
   }
 </style>

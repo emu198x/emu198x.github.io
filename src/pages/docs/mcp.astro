@@ -1,0 +1,369 @@
+---
+import DocLayout from '@layouts/DocLayout.astro';
+import { loadSiteData } from '@lib/site-data.js';
+
+// Measured from the flagship's registry, never typed here — same source and
+// same reason as the getting-started page. This page claims every machine
+// carries the MCP surface, so a hand-written count would make that claim
+// false the day a machine lands, with the build still green.
+const { fleet } = loadSiteData();
+const machineCount = fleet.length;
+---
+
+<DocLayout
+  title="MCP"
+  description="Every Emu198x binary is also an MCP server. What the tool surface covers today, how to drive a machine with it, and what it cannot do yet."
+>
+  <h1>MCP</h1>
+
+  <p>
+    Every Emu198x binary is an MCP server as well as an emulator. Start one
+    with <code>--mcp</code> and it stops being a window you watch: another
+    program boots the machine, runs frames, presses keys, reads a chip
+    register, and writes out a PNG, without knowing anything about that
+    machine's timing loop.
+  </p>
+
+  <p>
+    MCP is the Model Context Protocol — a convention for offering a set of
+    callable tools to whatever is on the other end of a pipe. The client sends
+    JSON-RPC frames on standard input, one per line, and the server answers on
+    standard output. A client can ask what a server offers and then call it,
+    without being taught the server's internals first. That is the whole idea,
+    and everything below is a shell pipeline you can paste and run.
+  </p>
+
+  <h2>The mental model</h2>
+
+  <ul>
+    <li>
+      <strong>The core stays hardware-specific.</strong> A Spectrum is still a
+      Z80 and a ULA, a C64 is still a 6510 and a VIC-II. Nothing is flattened
+      into a common machine to make automation tidier.
+    </li>
+    <li>
+      <strong>The server is a thin adapter.</strong> It translates calls into
+      control and inspection against the core, and holds no emulation logic of
+      its own.
+    </li>
+    <li>
+      <strong>Observability is path-based.</strong> A machine publishes named
+      paths — <code>cpu.pc</code>, <code>vic.raster_line</code>,{' '}
+      <code>ppu.scanline</code> — and a caller asks which ones exist before
+      reading any of them. One script can therefore work across machines that
+      share no chips at all.
+    </li>
+  </ul>
+
+  <h2>What works today</h2>
+
+  <p>
+    All {machineCount} machines take <code>--mcp</code>. The server speaks three
+    JSON-RPC methods — <code>initialize</code>, <code>tools/list</code> and{' '}
+    <code>tools/call</code> — and it accepts the{' '}
+    <code>notifications/initialized</code> note a client sends after the
+    handshake. Everything the emulator can do arrives as a tool call.
+  </p>
+
+  <p>
+    Each machine registers the same core of 32 tools, then adds whatever its
+    hardware justifies. The Spectrum's server lists 48 tools; the Atari 2600's
+    lists the core 32 and no more.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Need</th><th>Tools</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Advance execution</td>
+        <td>
+          <code>run_frames</code>, <code>run_ticks</code>, <code>step</code>,{' '}
+          <code>run_until_pc</code>, <code>run_until_any_pc</code>,{' '}
+          <code>run_until_line</code>, <code>run_until_mem_change</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Wait for a state</td>
+        <td>
+          <code>wait_for_boot</code>, <code>wait_for_query_contains</code>,{' '}
+          <code>wait_for_query_bool</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Inspect</td>
+        <td>
+          <code>query_paths</code>, <code>query</code>, <code>query_cpu</code>,{' '}
+          <code>memory_read</code>, <code>disasm</code>, <code>io_trace</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Change memory</td>
+        <td><code>poke_byte</code>, <code>poke_word</code></td>
+      </tr>
+      <tr>
+        <td>Media and state</td>
+        <td>
+          <code>load_media</code>, <code>media_transport</code>,{' '}
+          <code>save_snapshot</code>, <code>load_snapshot</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Capture</td>
+        <td>
+          <code>save_screenshot</code>, <code>start_audio_recording</code>,{' '}
+          <code>stop_audio_recording</code>, <code>save_audio_capture</code>,{' '}
+          <code>start_video_recording</code>, <code>stop_video_recording</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Input</td>
+        <td><code>input</code></td>
+      </tr>
+      <tr>
+        <td>Source-level debugging</td>
+        <td><code>load_debug_info</code>, <code>debug_symbol</code></td>
+      </tr>
+      <tr>
+        <td>Reset</td>
+        <td><code>reset</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    What a machine adds on top follows its hardware. Machines with keyboards
+    add <code>press_key</code>, <code>press_keys</code> and{' '}
+    <code>type_string</code>. The NES adds <code>dump_nametable</code>,{' '}
+    <code>dump_oam</code> and <code>dump_palette</code>. The C64 adds disk
+    write-back and BASIC program loading; the Spectrum adds Z80 port access,
+    tape autoloading, and watch logs for memory and AY register writes. Ask{' '}
+    <code>tools/list</code> and you get the machine's own set, each entry
+    carrying a JSON Schema for its arguments.
+  </p>
+
+  <h2>Starting a server</h2>
+
+  <p>From an unpacked release archive:</p>
+
+  <pre tabindex="0"><code>./emu198x-spectrum --mcp</code></pre>
+
+  <p>Or from a source checkout:</p>
+
+  <pre tabindex="0"><code>cargo run --release -p emu198x-spectrum -- --mcp</code></pre>
+
+  <p>
+    Nothing prints. The server is waiting on standard input, and it boots the
+    machine before the first call arrives.
+  </p>
+
+  <p>
+    To hand a machine to an agent instead, most MCP clients take a server list
+    in this shape. One entry per machine you want to drive; the name on the
+    left is yours to choose.
+  </p>
+
+  <pre tabindex="0"><code>&lbrace;
+  "mcpServers": &lbrace;
+    "spectrum": &lbrace;
+      "command": "/path/to/emu198x-spectrum",
+      "args": ["--mcp"]
+    &rbrace;
+  &rbrace;
+&rbrace;</code></pre>
+
+  <h2>Driving a machine</h2>
+
+  <p>
+    Here is a whole session as a shell pipeline: boot a Spectrum, wait for it to
+    finish, press a key, read the text screen back, and save a screenshot. Each
+    line is one JSON-RPC frame.
+  </p>
+
+  <pre tabindex="0"><code>printf '%s\n' \
+  '&lbrace;"jsonrpc":"2.0","id":1,"method":"initialize","params":&lbrace;&rbrace;&rbrace;' \
+  '&lbrace;"jsonrpc":"2.0","id":2,"method":"tools/call","params":&lbrace;"name":"wait_for_boot","arguments":&lbrace;"max_frames":300&rbrace;&rbrace;&rbrace;' \
+  '&lbrace;"jsonrpc":"2.0","id":3,"method":"tools/call","params":&lbrace;"name":"press_key","arguments":&lbrace;"key":"P"&rbrace;&rbrace;&rbrace;' \
+  '&lbrace;"jsonrpc":"2.0","id":4,"method":"tools/call","params":&lbrace;"name":"run_frames","arguments":&lbrace;"frames":25&rbrace;&rbrace;&rbrace;' \
+  '&lbrace;"jsonrpc":"2.0","id":5,"method":"tools/call","params":&lbrace;"name":"query","arguments":&lbrace;"path":"screen.text.lines"&rbrace;&rbrace;&rbrace;' \
+  '&lbrace;"jsonrpc":"2.0","id":6,"method":"tools/call","params":&lbrace;"name":"save_screenshot","arguments":&lbrace;"path":"boot.png"&rbrace;&rbrace;&rbrace;' \
+| ./emu198x-spectrum --mcp</code></pre>
+
+  <p>
+    Six replies come back on standard output. Trimmed to the part that matters,
+    they read:
+  </p>
+
+  <pre tabindex="0"><code>&lbrace;"kind":"wait_for_boot","frames":87,"reason":"found copyright banner on row 23","row":23&rbrace;
+&lbrace;"kind":"press_key","key":"P","hold_frames":3,"reached":25439232&rbrace;
+&lbrace;"kind":"run_frames","frames":25,"reached":32428032,"stop_reason":"ReachedTarget"&rbrace;
+&lbrace;"kind":"query","result":&lbrace;"path":"screen.text.lines","value":[ ... ,"PRINT L    "]&rbrace;&rbrace;</code></pre>
+
+  <p>
+    Every step is answered with what the machine did, not with a promise that it
+    did something. <code>wait_for_boot</code> reports the frame it stopped on
+    and why it believed the machine had booted. <code>press_key</code> holds the
+    key for three frames and releases it, the way a finger does. Pressing P on a
+    48K Spectrum at the BASIC prompt gives you the whole <code>PRINT</code>{' '}
+    keyword, which is what the screen read back says — the trailing L is the
+    cursor. And <code>boot.png</code> is on disk beside the binary.
+  </p>
+
+  <p>
+    That is the shape of every session. Advance the machine, read state back,
+    decide what to do next from what you read. Waiting for a condition beats
+    sleeping for an arbitrary number of frames, which is why{' '}
+    <code>wait_for_boot</code>, <code>wait_for_query_contains</code> and{' '}
+    <code>run_until_pc</code> exist.
+  </p>
+
+  <h2>Ask the machine what it exposes</h2>
+
+  <p>
+    The stable pattern for inspection is two calls. Ask what paths exist, pick
+    one, read it. Pass a prefix so the answer stays short:
+  </p>
+
+  <pre tabindex="0"><code>printf '%s\n' \
+  '&lbrace;"jsonrpc":"2.0","id":1,"method":"initialize","params":&lbrace;&rbrace;&rbrace;' \
+  '&lbrace;"jsonrpc":"2.0","id":2,"method":"tools/call","params":&lbrace;"name":"query_paths","arguments":&lbrace;"prefix":"cpu."&rbrace;&rbrace;&rbrace;' \
+  '&lbrace;"jsonrpc":"2.0","id":3,"method":"tools/call","params":&lbrace;"name":"query","arguments":&lbrace;"path":"cpu.pc"&rbrace;&rbrace;&rbrace;' \
+| ./emu198x-spectrum --mcp</code></pre>
+
+  <p>
+    The Spectrum answers that prefix with sixteen paths, <code>cpu.af</code>{' '}
+    through <code>cpu.sp</code>, including <code>cpu.iff1</code>,{' '}
+    <code>cpu.im</code> and <code>cpu.instructions_retired</code>. Four
+    prefixes are on every machine: <code>cpu.</code>, <code>run.</code>,{' '}
+    <code>session.</code> and <code>capture.</code>. Past those, the namespace
+    is the hardware.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Machine</th><th>Paths</th><th>Some of what it publishes</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>ZX Spectrum</td>
+        <td>65</td>
+        <td>
+          <code>screen.</code>, <code>basic.</code>, <code>tape.</code>,{' '}
+          <code>keyboard.</code>, <code>boot.</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Commodore 64</td>
+        <td>164</td>
+        <td>
+          <code>vic.</code>, <code>cia1.</code>, <code>cia2.</code>,{' '}
+          <code>drive8.</code>, <code>iec.</code>, <code>memory.</code>
+        </td>
+      </tr>
+      <tr>
+        <td>NES</td>
+        <td>83</td>
+        <td>
+          <code>ppu.</code>, <code>apu.</code>, <code>mapper.</code>,{' '}
+          <code>sprites.</code>, <code>cartridge.</code>
+        </td>
+      </tr>
+      <tr>
+        <td>MSX1</td>
+        <td>42</td>
+        <td>
+          <code>vdp.</code>, <code>ay.</code>, <code>ppi.</code>,{' '}
+          <code>bios.</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Atari 2600</td>
+        <td>39</td>
+        <td><code>tia.</code>, <code>input.</code>, <code>cartridge.</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    Read raw memory with <code>memory_read</code> instead — it takes an address
+    and a length and reads the CPU bus with no side effects, which a query path
+    is the wrong shape for.
+  </p>
+
+  <h2>What you need that we cannot give you</h2>
+
+  <p>
+    Two things, and neither ships with the emulator.
+  </p>
+
+  <p>
+    <strong>The machine's firmware.</strong> A server boots its machine before
+    the first call arrives, so it needs the same ROMs a window needs, found the
+    same way. The{' '}
+    <a href="/docs/getting-started/">getting started page</a> covers where each
+    machine looks. A machine that cannot find its firmware fails at startup
+    rather than at the first call, which is the easier failure to read.
+  </p>
+
+  <p>
+    <strong>A client that speaks stdio JSON-RPC.</strong> The server talks over
+    standard input and output, one JSON object per line. Any MCP client can
+    drive it, and so can a shell pipeline — the examples above are exactly
+    that, and they are the shortest way to see whether a machine works before
+    wiring an agent to it.
+  </p>
+
+  <h2>What does not work yet</h2>
+
+  <ul>
+    <li>
+      <strong>No breakpoints.</strong> There is no way to set one, list one, or
+      attach a condition such as <code>a == 0</code> to an address. What exists
+      instead is stepping to a target: <code>run_until_pc</code>,{' '}
+      <code>run_until_any_pc</code>, <code>run_until_line</code> and{' '}
+      <code>run_until_mem_change</code> all run whole instructions until a
+      condition holds or a step budget runs out. That covers most of what a
+      breakpoint is used for, and none of what a conditional one is.
+    </li>
+    <li>
+      <strong>Nothing is pushed.</strong> The server answers calls and never
+      speaks first, so there are no <code>frame_complete</code> or error
+      notifications to subscribe to. A client that wants to know when something
+      happened has to run frames and look.
+    </li>
+    <li>
+      <strong>Tools only.</strong> The server advertises no MCP resources and no
+      prompts, and <code>resources/list</code> comes back as a method that does
+      not exist. Everything is reached by calling a tool.
+    </li>
+    <li>
+      <strong>Standard input and output only.</strong> There is no network
+      transport, so a client has to be able to start the binary as a child
+      process. Driving a machine on another host is not covered.
+    </li>
+    <li>
+      <strong>The surface is uneven across machines.</strong> A tool that a
+      machine has not reached is either absent from its{' '}
+      <code>tools/list</code> or returns an error when called. Where that
+      happens, the path-based <code>query</code> flow is the fallback: it is on
+      every machine, and it reports what it cannot resolve instead of guessing.
+    </li>
+    <li>
+      <strong>Some arguments are not in the schema.</strong> The{' '}
+      <code>input</code> tool takes an array, and the shape of the events
+      inside it is not written down anywhere — a wrong one is found by being
+      rejected. Media slot names are better off: a slot has a name{' '}
+      (<code>tape-1</code> on the Spectrum, <code>cartridge-1</code> on the
+      NES) and the schema does not say so, but{' '}
+      <code>session.profile.media_slots.ids</code> lists the names a machine
+      has, so that one is a query rather than a guess.
+    </li>
+    <li>
+      <strong><code>--mcp</code> is missing from <code>--help</code>.</strong>{' '}
+      The flag works on every machine and the help text does not mention it, so
+      anyone who goes looking for the automation surface where a binary lists
+      its flags will not find it.
+    </li>
+  </ul>
+</DocLayout>

@@ -1,0 +1,578 @@
+---
+import DocLayout from '@layouts/DocLayout.astro';
+import { loadSiteData } from '@lib/site-data.js';
+
+// Measured from the flagship's registry, never typed here — same source and
+// same reason as the getting-started, MCP, scripting and capture pages. This
+// page claims every machine publishes query paths, so a hand-written count
+// would make that claim false the day a machine lands, with the build still
+// green.
+const { fleet } = loadSiteData();
+const machineCount = fleet.length;
+---
+
+<DocLayout
+  title="Observability"
+  description="Reading the state of a running machine by path. What the query surface covers today, how to ask a machine what it publishes, and where the inspection stops."
+>
+  <h1>Observability</h1>
+
+  <p>
+    A running machine holds state: a program counter, a raster line, a border
+    colour, a tape head part-way through a block. Emu198x publishes that state
+    as named paths. Ask a machine which paths it has, read the ones you want,
+    and the clock does not move while you look.
+  </p>
+
+  <p>
+    Paths are the shape because the alternative is a lie. A C64 has a VIC-II, a
+    NES has a PPU, an Amiga has three custom chips that share a bus, and no
+    honest common interface flattens those into one screen object. So the names
+    stay the hardware's own and the <em>list</em> is what travels: a tool calls{' '}
+    <code>query_paths</code> to find out what this machine publishes, then{' '}
+    <code>query</code> to read one. Written that way, it works on a machine
+    that did not exist when it was written.
+  </p>
+
+  <h2>The mental model</h2>
+
+  <ul>
+    <li>
+      <strong>Two calls, and the first is the discovery.</strong>{' '}
+      <code>query_paths</code> lists what a machine publishes;{' '}
+      <code>query</code> reads one path. Both are{' '}
+      <a href="/docs/scripting/">script</a> steps and both are{' '}
+      <a href="/docs/mcp/">MCP</a> tools, with the same names and the same
+      arguments either way.
+    </li>
+    <li>
+      <strong>The list is what the machine can publish, not what it can answer
+      now.</strong> A NES with no cartridge still lists all 83 of its paths.
+      Reading one comes back as{' '}
+      <code>query path cpu.pc is unavailable: no cartridge is loaded</code> —
+      the path is real, the machine has nothing behind it yet. A name that was
+      never there answers differently:{' '}
+      <code>query path nonsense.path is not known</code>. Wrong name and wrong
+      moment stay separate failures.
+    </li>
+    <li>
+      <strong>Reading costs the machine nothing.</strong> Query{' '}
+      <code>session.time</code>, read two whole chips, query{' '}
+      <code>session.time</code> again and the number has not changed. There is
+      no peek that clears a latch and no read that steals a cycle, so a report
+      taken mid-run describes the run it was taken from.
+    </li>
+    <li>
+      <strong>A path is a label on a real register.</strong>{' '}
+      <code>cpu.af</code> on a Z80 and <code>cpu.x</code> on a 6502, because
+      that is what those CPUs have. Four prefixes are on every machine —{' '}
+      <code>cpu.</code>, <code>run.</code>, <code>session.</code> and{' '}
+      <code>capture.</code> — and everything past them is that machine's
+      hardware under its own name.
+    </li>
+  </ul>
+
+  <h2>What works today</h2>
+
+  <p>
+    All {machineCount} machines publish paths, and the smallest set is not
+    small. What varies is how much hardware there is to name.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Machine</th><th>Paths</th><th>Some of what it publishes</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Amiga</td>
+        <td>1321</td>
+        <td>
+          <code>agnus.</code>, <code>denise.</code>, <code>paula.</code>,{' '}
+          <code>copper.</code>, <code>blitter.</code>, <code>dma.</code>,{' '}
+          <code>disk.</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Commodore 64</td>
+        <td>164</td>
+        <td>
+          <code>vic.</code>, <code>cia1.</code>, <code>cia2.</code>,{' '}
+          <code>drive8.</code>, <code>iec.</code>, <code>memory.</code>
+        </td>
+      </tr>
+      <tr>
+        <td>NES</td>
+        <td>83</td>
+        <td>
+          <code>ppu.</code>, <code>apu.</code>, <code>mapper.</code>,{' '}
+          <code>sprites.</code>, <code>cartridge.</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Dragon</td>
+        <td>67</td>
+        <td>
+          <code>sam.</code>, <code>pia0.</code>, <code>pia1.</code>,{' '}
+          <code>video.</code>, <code>tape.</code>, <code>disk.</code>
+        </td>
+      </tr>
+      <tr>
+        <td>ZX Spectrum</td>
+        <td>65</td>
+        <td>
+          <code>screen.</code>, <code>basic.</code>, <code>tape.</code>,{' '}
+          <code>keyboard.</code>, <code>boot.</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Atari 800XL</td>
+        <td>64</td>
+        <td>
+          <code>antic.</code>, <code>gtia.</code>, <code>pokey.</code>,{' '}
+          <code>pia.</code>, <code>basic.</code>
+        </td>
+      </tr>
+      <tr>
+        <td>MSX1</td>
+        <td>42</td>
+        <td>
+          <code>vdp.</code>, <code>ay.</code>, <code>ppi.</code>,{' '}
+          <code>bios.</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Atari 2600</td>
+        <td>39</td>
+        <td><code>tia.</code>, <code>input.</code>, <code>cartridge.</code></td>
+      </tr>
+      <tr>
+        <td>Game Boy</td>
+        <td>26</td>
+        <td><code>cpu.</code>, <code>cartridge.</code>, <code>capture.</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>
+    Those two ends are worth sitting with. The <a href="/systems/commodore-amiga/">Amiga</a>{' '}
+    names 240 paths under <code>cpu.</code> alone and another 227 under{' '}
+    <code>paula.</code>, because a chip that does audio, disk and interrupts has
+    that much to say. The Game Boy publishes 26 and has no <code>machine.</code>{' '}
+    prefix at all — it is the one machine of the {machineCount} that does not.
+    Hard-coding a path list is therefore the mistake the discovery call exists
+    to prevent.
+  </p>
+
+  <h3>The machine describes itself</h3>
+
+  <p>
+    Before any of the hardware paths there is <code>session.profile.</code>,
+    which answers with no media loaded and on every machine. Put this in{' '}
+    <code>profile.json</code>:
+  </p>
+
+  <pre tabindex="0"><code>[
+  &lbrace;"action":"query","path":"session.profile.display_name"&rbrace;,
+  &lbrace;"action":"query","path":"session.profile.firmware.ids"&rbrace;,
+  &lbrace;"action":"query","path":"session.profile.media_slots.ids"&rbrace;
+]</code></pre>
+
+  <pre tabindex="0"><code>./emu198x-spectrum --script profile.json</code></pre>
+
+  <pre tabindex="0"><code>&lbrace;"kind":"query","result":&lbrace;"path":"session.profile.display_name","value":"ZX Spectrum 48K (PAL)"&rbrace;&rbrace;
+&lbrace;"kind":"query","result":&lbrace;"path":"session.profile.firmware.ids","value":["sinclair-zx-spectrum-48k-rom"]&rbrace;&rbrace;
+&lbrace;"kind":"query","result":&lbrace;"path":"session.profile.media_slots.ids","value":["tape-1"]&rbrace;&rbrace;</code></pre>
+
+  <p>
+    That last line is the one to remember. A media slot has a name and the
+    names differ per machine — <code>tape-1</code> here,{' '}
+    <code>cartridge-1</code> and <code>cartridge-2</code> on an MSX,{' '}
+    <code>cartridge-1</code> on a NES — and this path is where a machine lists
+    its own. The same prefix carries <code>machine_id</code>,{' '}
+    <code>family</code>, <code>region</code>, <code>release_year</code>,{' '}
+    <code>capabilities</code> and the clock rate as a numerator and
+    denominator, so a tool can label a report without being told which binary
+    produced it.
+  </p>
+
+  <h3>What else reads state</h3>
+
+  <p>
+    Paths are the portable half. Beside them sit calls that answer a shape a
+    path is wrong for.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Need</th><th>Call</th><th>Where</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>What does this machine publish?</td>
+        <td><code>query_paths</code></td>
+        <td>Every machine</td>
+      </tr>
+      <tr>
+        <td>Read one path</td>
+        <td><code>query</code></td>
+        <td>Every machine</td>
+      </tr>
+      <tr>
+        <td>Registers as a formatted dump</td>
+        <td><code>query_cpu</code></td>
+        <td>Every machine</td>
+      </tr>
+      <tr>
+        <td>Raw bytes off the bus</td>
+        <td><code>memory_read</code></td>
+        <td>Every machine</td>
+      </tr>
+      <tr>
+        <td>Instructions at an address</td>
+        <td><code>disasm</code></td>
+        <td>Every machine</td>
+      </tr>
+      <tr>
+        <td>Stop when a path reaches a value</td>
+        <td>
+          <code>wait_for_query_bool</code>,{' '}
+          <code>wait_for_query_contains</code>
+        </td>
+        <td>Every machine</td>
+      </tr>
+      <tr>
+        <td>Every I/O port access over a window</td>
+        <td><code>io_trace</code></td>
+        <td>Nine port-mapped machines, over MCP</td>
+      </tr>
+      <tr>
+        <td>An instruction-by-instruction trace</td>
+        <td>
+          <code>cpu_trace_arm</code>, <code>cpu_trace_log</code>
+        </td>
+        <td>Amiga, over MCP</td>
+      </tr>
+      <tr>
+        <td>Log writes to a memory range</td>
+        <td>
+          <code>watch_memory_start</code>, <code>watch_memory_log</code>
+        </td>
+        <td>ZX Spectrum and Amiga</td>
+      </tr>
+      <tr>
+        <td>Log writes to the sound chip</td>
+        <td><code>watch_ay_start</code>, <code>watch_ay_log</code></td>
+        <td>Six machines</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Looking at a running machine</h2>
+
+  <p>
+    The shortest run that needs no firmware and no software you have to find.
+    Discover a prefix, run the machine, read three paths. Put this in{' '}
+    <code>look.json</code>:
+  </p>
+
+  <pre tabindex="0"><code>[
+  &lbrace;"action":"query_paths","prefix":"ppu."&rbrace;,
+  &lbrace;"action":"run_frames","frames":120&rbrace;,
+  &lbrace;"action":"query","path":"ppu.scanline"&rbrace;,
+  &lbrace;"action":"query","path":"cpu.pc"&rbrace;,
+  &lbrace;"action":"query","path":"cpu.flags"&rbrace;
+]</code></pre>
+
+  <p>
+    From a source checkout, against a synthetic cartridge built in this
+    repository:
+  </p>
+
+  <pre tabindex="0"><code>cargo run --release -p emu198x-nes -- \
+  --rom test-data/synthetic-cartridges/nintendo-nes-logo.nes \
+  --script look.json</code></pre>
+
+  <p>
+    One JSON object lands on standard output. Its observations, one per line
+    and trimmed to the part worth reading:
+  </p>
+
+  <pre tabindex="0"><code>&lbrace;"kind":"query_paths","result":&lbrace;"prefix":"ppu.","paths":["ppu.ctrl","ppu.dot", ... ,"ppu.scanline","ppu.status"]&rbrace;&rbrace;
+&lbrace;"kind":"run_frames","frames":120,"reached":21263620,"stop_reason":"ReachedTarget"&rbrace;
+&lbrace;"kind":"query","result":&lbrace;"path":"ppu.scanline","value":0&rbrace;&rbrace;
+&lbrace;"kind":"query","result":&lbrace;"path":"cpu.pc","value":32926&rbrace;&rbrace;
+&lbrace;"kind":"query","result":&lbrace;"path":"cpu.flags","value":&lbrace;"b":false,"c":true,"d":false,"i":true,"n":false,"u":true,"v":false,"z":false&rbrace;&rbrace;&rbrace;</code></pre>
+
+  <p>
+    Three things in that report shape everything else. <code>prefix</code> is a
+    literal string match with no wildcards, and a prefix nothing starts with
+    returns an empty list instead of an error — so a tool can probe for{' '}
+    <code>vic.</code> and find out it is on the wrong machine without handling
+    a failure. <code>cpu.pc</code> comes back as 32926, in decimal, because a
+    query answers with a number and not with a rendering of one;{' '}
+    <code>$809E</code> is your side of the line. And <code>cpu.flags</code>{' '}
+    answers with a whole object, because the path names a group of bits rather
+    than a single value.
+  </p>
+
+  <p>
+    That last habit goes further on some machines. Where a bare group name
+    appears in the path list — <code>cpu</code>, <code>ppu</code> and{' '}
+    <code>apu</code> on the NES, <code>copper</code> and <code>denise</code>{' '}
+    among nineteen on the Amiga — reading it returns every leaf beneath it in
+    one answer. It is the difference between twenty calls and one. Not every
+    machine offers them: the C64 publishes leaves only.
+  </p>
+
+  <h3>The same two calls over MCP</h3>
+
+  <p>
+    Nothing about the vocabulary changes when a program drives the machine
+    instead of a file. What changes is the envelope:
+  </p>
+
+  <pre tabindex="0"><code>printf '%s\n' \
+  '&lbrace;"jsonrpc":"2.0","id":1,"method":"initialize","params":&lbrace;&rbrace;&rbrace;' \
+  '&lbrace;"jsonrpc":"2.0","id":2,"method":"tools/call","params":&lbrace;"name":"run_frames","arguments":&lbrace;"frames":120&rbrace;&rbrace;&rbrace;' \
+  '&lbrace;"jsonrpc":"2.0","id":3,"method":"tools/call","params":&lbrace;"name":"query","arguments":&lbrace;"path":"vic.border_colour"&rbrace;&rbrace;&rbrace;' \
+| ./emu198x-c64 --mcp</code></pre>
+
+  <pre tabindex="0"><code>&lbrace;"jsonrpc":"2.0","id":3,"result":&lbrace;"content":[&lbrace;"text":"&lbrace;\"kind\":\"query\",\"result\":&lbrace;\"path\":\"vic.border_colour\",\"value\":14&rbrace;&rbrace;","type":"text"&rbrace;]&rbrace;&rbrace;</code></pre>
+
+  <p>
+    The answer is a JSON document inside a JSON string inside a JSON-RPC frame.
+    Parse <code>content[0].text</code> a second time before reading{' '}
+    <code>value</code> out of it — a client that treats the text as opaque gets
+    a string that looks right in a log and counts as zero paths in code. Every{' '}
+    <code>query_paths</code> reply arrives the same way.
+  </p>
+
+  <p>
+    One trap on the way in. A machine that boots from firmware is ready before
+    the first call arrives, so the C64 above needs no setup. A machine that
+    boots from a cartridge is not:{' '}
+    <code>--rom</code> and <code>--cart</code> are ignored under{' '}
+    <code>--mcp</code>, and every hardware path answers{' '}
+    <code>is unavailable: no cartridge is loaded</code> until a{' '}
+    <code>load_media</code> call has named a slot, a kind and a file.
+  </p>
+
+  <h3>Reading memory by path</h3>
+
+  <p>
+    The <a href="/systems/commodore-c64/">C64</a> is the one machine whose path
+    list carries a template rather than a fixed name. Two of its 164 entries
+    read <code>memory.ram.&lt;hex16&gt;</code> and{' '}
+    <code>drive8.mem.&lt;hex16&gt;</code>, and the placeholder is yours to
+    fill:
+  </p>
+
+  <pre tabindex="0"><code>[
+  &lbrace;"action":"wait_for_boot","max_frames":300&rbrace;,
+  &lbrace;"action":"query","path":"vic.border_colour"&rbrace;,
+  &lbrace;"action":"query","path":"memory.ram.D020"&rbrace;,
+  &lbrace;"action":"query","path":"memory.ram.0400"&rbrace;
+]</code></pre>
+
+  <pre tabindex="0"><code>&lbrace;"kind":"wait_for_boot","frames":109,"reached":2142504,"reason":"found READY. screen codes at offset $00C8 on row 5","row":5&rbrace;
+&lbrace;"kind":"query","result":&lbrace;"path":"vic.border_colour","value":14&rbrace;&rbrace;
+&lbrace;"kind":"query","result":&lbrace;"path":"memory.ram.D020","value":255&rbrace;&rbrace;
+&lbrace;"kind":"query","result":&lbrace;"path":"memory.ram.0400","value":32&rbrace;&rbrace;</code></pre>
+
+  <p>
+    Fourteen is light blue, and it is the border a C64 wakes up with. The two
+    memory reads show why the chip path is not a convenience wrapper around the
+    address: <code>$D020</code> is where a program writes to change that
+    border, and the byte living at <code>$D020</code> in RAM is 255, because
+    the VIC-II register and the RAM underneath it are different storage that
+    share an address. Ask the chip for chip state.{' '}
+    <code>memory.ram.0400</code> is 32, a space, which is the top-left cell of
+    a freshly cleared screen.
+  </p>
+
+  <p>
+    Both spellings of the address work — <code>D020</code> and{' '}
+    <code>0x0400</code> resolve alike, and no other machine takes an address
+    this way. The <a href="/systems/commodore-amiga/">Amiga</a> is the one
+    other machine publishing anything under <code>memory.</code>, and its
+    twelve entries are fixed names for the memory map rather than a byte you
+    choose: <code>memory.chip_ram.size_bytes</code>,{' '}
+    <code>memory.rom.kind</code>, <code>memory.overlay</code>. The remaining
+    {' '}{machineCount - 2} machines publish nothing under that prefix at all.
+    Reading a byte anywhere but the C64 is <code>memory_read</code>, which
+    takes an address and a length.
+  </p>
+
+  <h3>Watching a window of time</h3>
+
+  <p>
+    A path read answers for the instant it was taken. The two calls below
+    record what happened across a span instead, and both are MCP tools with no
+    script step of their own.
+  </p>
+
+  <p>
+    <code>io_trace</code> runs a given number of frames and reports every I/O
+    port access inside them. On an MSX that is the BIOS talking to its own
+    hardware:
+  </p>
+
+  <pre tabindex="0"><code>printf '%s\n' \
+  '&lbrace;"jsonrpc":"2.0","id":1,"method":"initialize","params":&lbrace;&rbrace;&rbrace;' \
+  '&lbrace;"jsonrpc":"2.0","id":2,"method":"tools/call","params":&lbrace;"name":"io_trace","arguments":&lbrace;"frames":2,"limit":4&rbrace;&rbrace;&rbrace;' \
+| ./emu198x-msx --mcp</code></pre>
+
+  <pre tabindex="0"><code>&lbrace;"by_port":[&lbrace;"port":"$0090","reads":0,"writes":1&rbrace;,&lbrace;"port":"$0098","reads":0,"writes":121&rbrace;,&lbrace;"port":"$0099","reads":1,"writes":8&rbrace;, ... ],
+ "events":[&lbrace;"dir":"out","pc":"$02DB","port":"$00AB","value":"$82"&rbrace;, ... ],
+ "frames":2,"total_events":215,"truncated":true&rbrace;</code></pre>
+
+  <p>
+    A per-port tally first, then a sample of events carrying the PC that made
+    each one, then the honest count: 215 accesses happened and 4 came back,{' '}
+    <code>truncated</code> says so. Ports <code>$98</code> and{' '}
+    <code>$99</code> are the VDP, <code>$A0</code> to <code>$A2</code> the
+    sound chip, <code>$A8</code> to <code>$AB</code> the PPI — the boot ROM
+    setting up a machine, visible without a debugger attached.
+  </p>
+
+  <p>
+    <code>io_trace</code> is offered by every binary and works on nine of them:
+    the Amstrad CPC, ColecoVision, Mattel Aquarius, Memotech MTX, MSX1, Sord
+    M5, Tatung Einstein, ZX80 and ZX81. Elsewhere it refuses and says what to
+    use instead.
+  </p>
+
+  <p>
+    The <a href="/systems/commodore-amiga/">Amiga</a> goes further than any
+    other machine, with a trace buffer you arm and read. Arm it, run, and read
+    the tail:
+  </p>
+
+  <pre tabindex="0"><code>printf '%s\n' \
+  '&lbrace;"jsonrpc":"2.0","id":1,"method":"initialize","params":&lbrace;&rbrace;&rbrace;' \
+  '&lbrace;"jsonrpc":"2.0","id":2,"method":"tools/call","params":&lbrace;"name":"cpu_trace_arm","arguments":&lbrace;"max_entries":2000&rbrace;&rbrace;&rbrace;' \
+  '&lbrace;"jsonrpc":"2.0","id":3,"method":"tools/call","params":&lbrace;"name":"run_frames","arguments":&lbrace;"frames":2&rbrace;&rbrace;&rbrace;' \
+  '&lbrace;"jsonrpc":"2.0","id":4,"method":"tools/call","params":&lbrace;"name":"cpu_trace_log","arguments":&lbrace;"limit":3&rbrace;&rbrace;&rbrace;' \
+| ./emu198x-amiga --mcp</code></pre>
+
+  <pre tabindex="0"><code>&lbrace;"armed":true,"at_limit":true,"captured":2000,"entries":[&lbrace;"cck":11996,"opcode":"$6EFC","pc":"$00FC00E0","sr":"$2700"&rbrace;, ... ],"filtered_total":2000,"max_entries":2000,"returned":3&rbrace;</code></pre>
+
+  <p>
+    One entry per completed instruction, stamped with the colour clock it
+    finished on. <code>cpu_trace_arm</code> takes <code>pc_min</code> and{' '}
+    <code>pc_max</code> to record only inside a region of interest, and{' '}
+    <code>cpu_trace_log</code> filters what it returns by clock range and
+    reads from either end of the buffer. Two frames of Kickstart filled a
+    2000-entry buffer, which is the number to plan around: bound the PC range
+    or you capture the idle loop.
+  </p>
+
+  <h2>What you need that we cannot give you</h2>
+
+  <p>
+    <strong>Firmware and software.</strong> Emu198x ships no ROMs, no BIOS
+    images, and no disks, tapes or cartridges; the{' '}
+    <a href="/downloads/">downloads page</a> sets out the position on that.
+    Paths are the exception that proves it: <code>query_paths</code> and{' '}
+    <code>session.profile.</code> answer on a machine with nothing loaded,
+    which makes them the one part of the surface you can explore before finding
+    anything. Every hardware path needs a machine that is running.
+  </p>
+
+  <p>
+    <strong>Knowledge of the machine.</strong> A path list is a list of names,
+    with no types, no ranges and no prose. <code>vic.vcbase</code> and{' '}
+    <code>ppu.oam_addr</code> mean what the hardware means by them, and the
+    documentation for that is the chip's own — a data sheet, a programmer's
+    guide, a well-annotated ROM listing. The emulator tells you the value and
+    stops there.
+  </p>
+
+  <p>
+    <strong>A JSON parser you trust.</strong> Reports nest: a script writes one
+    object holding an <code>observations</code> array, and MCP wraps each
+    payload in a string inside a frame. Reading either with a pattern match
+    works until a value contains a brace.
+  </p>
+
+  <h2>What does not work yet</h2>
+
+  <ul>
+    <li>
+      <strong>No whole-machine snapshot you can read.</strong>{' '}
+      <code>save_snapshot</code> writes a file that restores the machine and
+      tells you nothing — 684,309 opaque bytes for a NES. There is no call
+      that hands back CPU, memory, video and audio state together as one
+      structured value, so a full picture is assembled path by path.
+    </li>
+    <li>
+      <strong>No breakpoints, and no conditions.</strong> Nothing sets one,
+      lists one, or attaches an expression such as <code>a == 0</code> to an
+      address. What exists is stepping to a target —{' '}
+      <code>run_until_pc</code>, <code>run_until_any_pc</code>,{' '}
+      <code>run_until_line</code> and <code>run_until_mem_change</code> — which
+      covers most of what a breakpoint is used for and none of what a
+      conditional one is.
+    </li>
+    <li>
+      <strong>Tracing is thin outside the Amiga.</strong> One machine of{' '}
+      {machineCount} records instructions. Nine record I/O ports, and the
+      refusal elsewhere can be wrong about why: a Spectrum turns{' '}
+      <code>io_trace</code> down with{' '}
+      <code>this machine does not support I/O port tracing (memory-mapped
+      CPU)</code>, which is not what a Z80 with an <code>IN</code>{' '}
+      instruction is. Memory-write logging reaches two machines and sound-chip
+      logging six. There is no general event buffer to filter by type, address
+      or tick.
+    </li>
+    <li>
+      <strong><code>disasm</code> returns 16 instructions and ignores{' '}
+      <code>count</code>.</strong> Every machine, every argument: ask for 3 and
+      the reply says <code>"count":16</code> and carries 16. Longer listings
+      come from calling again at the address after the last one. The output
+      gives address, raw bytes and mnemonic, with no cycle counts and no note
+      of which flags an instruction touches.
+    </li>
+    <li>
+      <strong>No labelled memory.</strong> Nothing maps{' '}
+      <code>$D020</code> to <code>BORDER</code> or explains what a write there
+      does. <code>load_debug_info</code> and <code>debug_symbol</code> resolve
+      symbols from a build you produced, which is a different question from
+      naming a machine's well-known addresses.
+    </li>
+    <li>
+      <strong>One path per call.</strong> There is no bulk read, no glob in a
+      path, and no wildcard in a <code>query_paths</code> prefix. Sampling
+      forty paths costs forty calls, and no call returns two paths captured at
+      the same instant unless one of them is a group.
+    </li>
+    <li>
+      <strong>Reading and writing are not symmetric.</strong> Paths read;
+      they never write. Changing state means <code>poke_byte</code> or{' '}
+      <code>poke_word</code> at an address, or <code>port_write</code> where a
+      machine has ports, so the name you read a value under is not the name you
+      change it under.
+    </li>
+    <li>
+      <strong>The path list is not a schema.</strong> It is names and nothing
+      else — no type, no width, no unit, no description, no marker for which
+      paths need a loaded machine. Whether a value arrives as a number, a
+      string, an array or an object is found by asking for it.
+    </li>
+    <li>
+      <strong>No visual debugger.</strong> There is no memory view, no sprite
+      inspector, no raster-position display and no register panel; the window a
+      binary opens plays the machine and does not inspect it. Everything on
+      this page is a script step or an MCP call, and drawing any of it is
+      yours.
+    </li>
+    <li>
+      <strong>A failed query ends a script.</strong> Asking for an unavailable
+      path stops the run, prints the message on standard error and discards the
+      report for the steps that already succeeded. Order matters:{' '}
+      <code>run.last.stop_reason</code> is unavailable until something has run,
+      and reading it first costs you the whole file.
+    </li>
+  </ul>
+</DocLayout>

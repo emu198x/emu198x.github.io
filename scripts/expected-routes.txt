@@ -1,8 +1,12 @@
 /
 /accuracy/
 /docs/
+/docs/capture/
 /docs/changelog/
 /docs/getting-started/
+/docs/mcp/
+/docs/observability/
+/docs/scripting/
 /docs/status/current-system-usability/
 /downloads/
 /systems/

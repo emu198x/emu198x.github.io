@@ -32,6 +32,13 @@ jobs:
   build:
     name: Build Astro site
     runs-on: ubuntu-latest
+    # Job level, not step level. Set on the build step alone, this was missing
+    # from "Run tests", whose registry test loads the same flagship data — so
+    # the fallback resolved $GITHUB_WORKSPACE/../emu198x, a path no runner has,
+    # and every pull request failed before it ever reached the build. Defined
+    # once here, every step inherits it and no step can be added without it.
+    env:
+      EMU198X_SOURCE_ROOT: ${{ github.workspace }}/emu198x-source
     steps:
       - name: Check out site
         uses: actions/checkout@v7
@@ -51,13 +58,25 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      # The prose gate shells out to vale, which is not on the runner. It fails
+      # loudly when the binary is missing rather than skipping — that is the
+      # point of it — so the build cannot pass without this step, and cannot
+      # quietly pass over unchecked prose either.
+      - name: Install the house prose style
+        run: |
+          set -euo pipefail
+          curl -fsSL "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz" \
+            | tar -xz -C /usr/local/bin vale
+          vale --version
+          vale sync
+        env:
+          VALE_VERSION: 3.17.1
+
       - name: Run tests
         run: npm test
 
       - name: Build site
         run: npm run build
-        env:
-          EMU198X_SOURCE_ROOT: ${{ github.workspace }}/emu198x-source
 
       # Between building and publishing, because a page that fails WCAG AA is
       # not one to deploy. Every route, both themes — roughly half the defects
