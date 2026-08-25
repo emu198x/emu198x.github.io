@@ -230,3 +230,28 @@ test('detection reorders and marks; it never removes an archive', () => {
     assert.ok(!script.includes(forbidden), `the detection script uses ${forbidden}`);
   }
 });
+
+// A version that updates itself inside a sentence whose evidence does not.
+// The /systems/ run-report said "all thirty of release {version}'s Apple
+// silicon builds ... twenty of them were run and opened a native window",
+// with {version} read from the flagship changelog. v0.6.0 shipped the day
+// after the run, so the next build would have reported thirty 0.6.0 binaries
+// nobody had started. A number derived from the current release cannot stand
+// in a sentence about what was run: the release moves and the run does not.
+test('the /systems/ run-report names the release it was run against', () => {
+  const source = readFileSync(join(ROOT, 'src/pages/systems/index.astro'), 'utf8');
+  // Matched on a fragment that survives the file's line wrapping: the
+  // sentence itself breaks across lines and a longer literal would fail for
+  // a formatting reason rather than a truthful one.
+  const marker = source.indexOf('opened a native window');
+  assert.notEqual(marker, -1, '/systems/ no longer carries the run-report sentence');
+
+  const start = source.lastIndexOf('<p>', marker);
+  const paragraph = source.slice(start, source.indexOf('</p>', marker));
+
+  assert.match(paragraph, /release 0\.5\.0/, 'the run-report does not name the release that was run');
+  assert.ok(
+    !/\{\s*version\s*\}/.test(paragraph),
+    'the run-report interpolates the current version into a claim about a past run',
+  );
+});
