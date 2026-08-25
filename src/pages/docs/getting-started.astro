@@ -37,9 +37,18 @@ const machineCount = fleet.length;
   <p>Each binary starts in one of three modes.</p>
 
   <ul>
+    {/*
+      20 of the 30, not all 30: the count is the v0.5.0 run
+      recorded on /systems/, where the Apple silicon archives were started
+      and watched. The ten that exit were watched exiting; what they do once
+      they have their media was not, so this does not say.
+    */}
     <li>
-      <strong>A window.</strong> The default. Start the binary and the machine
-      boots into a native window.
+      <strong>A window.</strong> The default, and what a bare start gives you
+      on 20 of the {machineCount} machines: run the binary and it boots into a
+      native window. The other 10 want media first — the Atari, Sega and Nintendo consoles, the Dragon 32 and the BBC
+      Micro — and starting one without it exits with an error naming what is
+      missing.
     </li>
     <li>
       <strong>A headless run.</strong> Either <code>--headless</code> or
