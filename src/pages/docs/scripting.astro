@@ -1,0 +1,367 @@
+---
+import DocLayout from '@layouts/DocLayout.astro';
+import { loadSiteData } from '@lib/site-data.js';
+
+// Measured from the flagship's registry, never typed here — same source and
+// same reason as the getting-started and MCP pages. This page claims every
+// machine takes a script, so a hand-written count would make that claim false
+// the day a machine lands, with the build still green.
+const { fleet } = loadSiteData();
+const machineCount = fleet.length;
+---
+
+<DocLayout
+  title="Scripting"
+  description="A JSON file of steps drives an Emu198x machine unattended. What the step vocabulary covers today, how to write and run one, and where an open-loop script stops being enough."
+>
+  <h1>Scripting</h1>
+
+  <p>
+    A script is a JSON file of steps that drives a machine with no window and
+    nobody watching. Hand one to any Emu198x binary with <code>--script</code>{' '}
+    and it boots the hardware, works down the file, writes out whatever it was
+    told to write, and prints a report of what happened. Run the same file
+    tomorrow and the machine does the same thing, frame for frame.
+  </p>
+
+  <p>
+    That last part is the reason to bother. A screenshot from a session someone
+    drove by hand is an anecdote — nobody else can check it. A screenshot from
+    a script comes with the file that produced it, and anyone holding the same
+    firmware gets the same picture. Every Spectrum boot capture on the{' '}
+    <a href="/systems/">system matrix</a> — one for the machine and one for
+    each of its variants — was made this way.
+  </p>
+
+  <h2>The mental model</h2>
+
+  <ul>
+    <li>
+      <strong>A script is a list, not a program.</strong> Steps run in order,
+      top to bottom. There are no conditions, no loops and no variables. What
+      the file says is what the machine does.
+    </li>
+    <li>
+      <strong>The steps are shared; the machines are not.</strong> Every binary
+      accepts the same vocabulary, and a Spectrum is still a Z80 and a ULA
+      underneath it. Where a machine has no hardware behind a step, that step
+      is refused rather than faked.
+    </li>
+    <li>
+      <strong>Time is counted in frames.</strong>{' '}
+      <code>&lbrace;"action":"run_frames","frames":300&rbrace;</code> is 300
+      native frames of that machine, so a run takes the same machine time on a
+      laptop and on a build agent.
+    </li>
+    <li>
+      <strong>Reading beats sleeping.</strong> Guessing a frame count and hoping
+      is how a script starts failing on someone else's hardware.{' '}
+      <code>wait_for_boot</code>, <code>wait_for_query_contains</code> and{' '}
+      <code>run_until_pc</code> stop when the machine reaches a state, and report
+      the frame they stopped on.
+    </li>
+  </ul>
+
+  <h3>A script or MCP?</h3>
+
+  <p>
+    Both drive the same session through the same verbs. What separates them is
+    who decides the next step.
+  </p>
+
+  <p>
+    Write a script when you know the whole run before it starts: boot a machine
+    for a screenshot, load a tape and capture what it paints, run a test image
+    and save the result. The file is one artefact you can commit, diff and hand
+    to someone else.
+  </p>
+
+  <p>
+    Reach for <a href="/docs/mcp/">MCP</a> when the next step depends on what
+    the last one returned — chasing a bug, walking a program's memory, anything
+    where you would want to look before choosing. A script cannot look.
+  </p>
+
+  <h2>What works today</h2>
+
+  <p>
+    All {machineCount} machines take <code>--script PATH</code>, and{' '}
+    <code>--script</code> implies headless: no window opens. The step vocabulary
+    is 47 actions and it is the same 47 on every binary, down to the spelling.
+    What varies between machines is which of them a machine can carry out.
+  </p>
+
+  <table>
+    <thead>
+      <tr><th>Need</th><th>Steps</th></tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Advance execution</td>
+        <td>
+          <code>run_frames</code>, <code>run_ticks</code>, <code>step</code>,{' '}
+          <code>run_until_pc</code>, <code>run_until_any_pc</code>,{' '}
+          <code>run_until_line</code>, <code>run_until_mem_change</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Wait for a state</td>
+        <td>
+          <code>wait_for_boot</code>, <code>wait_for_query_contains</code>,{' '}
+          <code>wait_for_query_bool</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Inspect</td>
+        <td>
+          <code>query_paths</code>, <code>query</code>, <code>query_cpu</code>,{' '}
+          <code>query_ay</code>, <code>memory_read</code>, <code>disasm</code>,{' '}
+          <code>port_read</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Change memory and ports</td>
+        <td>
+          <code>poke_byte</code>, <code>poke_word</code>,{' '}
+          <code>port_write</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Watch for writes</td>
+        <td>
+          <code>watch_memory_start</code>, <code>watch_memory_log</code>,{' '}
+          <code>watch_memory_clear</code>, <code>watch_ay_start</code>,{' '}
+          <code>watch_ay_log</code>, <code>watch_ay_clear</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Input</td>
+        <td>
+          <code>press_key</code>, <code>press_keys</code>,{' '}
+          <code>type_string</code>, <code>input</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Media and state</td>
+        <td>
+          <code>load_media</code>, <code>media_transport</code>,{' '}
+          <code>autoload_tape</code>, <code>load_basic_program</code>,{' '}
+          <code>load_snapshot</code>, <code>save_snapshot</code>,{' '}
+          <code>set_machine</code>, <code>reset</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Capture</td>
+        <td>
+          <code>save_screenshot</code>, <code>start_audio_recording</code>,{' '}
+          <code>stop_audio_recording</code>, <code>save_audio_capture</code>,{' '}
+          <code>clear_audio_capture</code>, <code>start_video_recording</code>,{' '}
+          <code>stop_video_recording</code>
+        </td>
+      </tr>
+      <tr>
+        <td>Source-level debugging</td>
+        <td><code>load_debug_info</code>, <code>debug_symbol</code></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Writing a script</h2>
+
+  <p>
+    The file is a JSON array. Each step is an object with an{' '}
+    <code>action</code> and whatever that action needs. Here is one that boots a
+    machine, reads its text screen back, and saves a PNG — put it in{' '}
+    <code>boot.json</code>:
+  </p>
+
+  <pre tabindex="0"><code>[
+  &lbrace;"action":"wait_for_boot","max_frames":300&rbrace;,
+  &lbrace;"action":"query","path":"screen.text.lines"&rbrace;,
+  &lbrace;"action":"save_screenshot","path":"boot.png"&rbrace;
+]</code></pre>
+
+  <p>Run it against a Spectrum:</p>
+
+  <pre tabindex="0"><code>./emu198x-spectrum --script boot.json</code></pre>
+
+  <p>
+    The machine needs its firmware first, found the same way a window finds it —
+    the <a href="/docs/getting-started/">getting started page</a> covers where
+    each one looks. Nothing prints while it runs; when it finishes,{' '}
+    <code>boot.png</code> is on disk and one JSON report is on standard output.
+    Trimmed to the part worth reading:
+  </p>
+
+  <pre tabindex="0"><code>&lbrace;"kind":"wait_for_boot","frames":87,"reached":24321024,"reason":"found copyright banner on row 23","row":23&rbrace;
+&lbrace;"kind":"query","result":&lbrace;"path":"screen.text.lines","value":[ ... ,"© 1982 Sinclair Research Ltd    "]&rbrace;&rbrace;</code></pre>
+
+  <p>
+    Every step that has something to report answers with what the machine did
+    rather than a promise that it did something. <code>wait_for_boot</code>{' '}
+    stopped on frame 87 and says why it believed the machine had booted.
+  </p>
+
+  <p>
+    That same file runs on a different machine without a word changed, because
+    nothing in it names Spectrum hardware:
+  </p>
+
+  <pre tabindex="0"><code>./emu198x-c64 --script boot.json</code></pre>
+
+  <p>
+    A C64 boots to <code>READY.</code> instead of a copyright line, so the text
+    that comes back differs — but the steps, the report and the PNG all arrive
+    the same way.
+  </p>
+
+  <h3>Typing at the machine</h3>
+
+  <p>
+    Input is where a script starts to look like someone at the keyboard. This
+    one waits for the Spectrum to boot, works out two plus two on it, reads the
+    answer off the screen, and photographs the result:
+  </p>
+
+  <pre tabindex="0"><code>[
+  &lbrace;"action":"wait_for_boot","max_frames":300&rbrace;,
+  &lbrace;"action":"press_key","key":"P"&rbrace;,
+  &lbrace;"action":"type_string","text":"2"&rbrace;,
+  &lbrace;"action":"press_keys","keys":["SymbolShift","K"]&rbrace;,
+  &lbrace;"action":"type_string","text":"2\n"&rbrace;,
+  &lbrace;"action":"query","path":"screen.text.lines"&rbrace;,
+  &lbrace;"action":"save_screenshot","path":"sum.png"&rbrace;
+]</code></pre>
+
+  <p>
+    Each of those steps is the real keyboard matrix, not a shortcut around it.
+    Pressing P at a 48K BASIC prompt gives the whole <code>PRINT</code> keyword,
+    which is why the script never spells it out. <code>press_keys</code> holds
+    Symbol Shift and K together to reach the <code>+</code> sign, because that
+    is where the plus lives on a rubber-key Spectrum. The trailing{' '}
+    <code>\n</code> is Enter.
+  </p>
+
+  <pre tabindex="0"><code>&lbrace;"kind":"press_key","key":"P","hold_frames":3,"reached":25439232&rbrace;
+&lbrace;"kind":"press_keys","keys":["SymbolShift","K"],"hold_frames":3,"reached":30471168&rbrace;
+&lbrace;"kind":"query","result":&lbrace;"path":"screen.text.lines","value":["4                               ", ... ,"0 OK, 0:1                       "]&rbrace;&rbrace;</code></pre>
+
+  <p>
+    A key is held for three frames and released, the way a finger does, and the
+    screen says <code>4</code>. Nothing in that run needed a person, and running
+    it again produces the same four.
+  </p>
+
+  <h2>Finding out what a machine accepts</h2>
+
+  <p>
+    Three things are worth knowing before writing a longer script, and all three
+    are questions the binary will answer.
+  </p>
+
+  <p>
+    <strong>Its headless flags.</strong> Plain <code>--help</code> prints the
+    flags for the window and stops there. The automation flags live behind a
+    second help screen:
+  </p>
+
+  <pre tabindex="0"><code>./emu198x-spectrum --headless --help</code></pre>
+
+  <p>
+    Those flags differ sharply between machines, and several are shorthand for a
+    step. On the Spectrum, <code>--tape game.tap</code> is the same thing as a{' '}
+    <code>load_media</code> step on slot <code>tape-1</code>, and the help says
+    so.
+  </p>
+
+  <p>
+    <strong>Its query paths.</strong> A <code>query_paths</code> step lists
+    every path the machine publishes, and takes an optional <code>prefix</code>{' '}
+    to keep the answer short. Ask before hard-coding: a Spectrum publishes 65
+    paths and a C64 well over twice that, and the names past{' '}
+    <code>cpu.</code>, <code>run.</code>, <code>session.</code> and{' '}
+    <code>capture.</code> are the hardware's own.
+  </p>
+
+  <p>
+    <strong>Its step vocabulary.</strong> No file lists it, so the shortest
+    route is to be wrong on purpose. Feed the binary a step that cannot exist
+    and the rejection names all 47:
+  </p>
+
+  <pre tabindex="0"><code>echo '[&lbrace;"action":"tell_me_the_steps"&rbrace;]' &gt; probe.json
+./emu198x-spectrum --script probe.json</code></pre>
+
+  <h2>What you need that we cannot give you</h2>
+
+  <p>
+    Firmware and software, the same as any other way of running these machines.
+    Emu198x ships no ROMs, no BIOS images, and no disks, tapes or cartridges;
+    the <a href="/downloads/">downloads page</a> sets out the position on that.
+    A machine that needs firmware fails before the first step runs, and names
+    the file it went looking for.
+  </p>
+
+  <p>
+    That travels with the script. A script that loads media names a path on your
+    disk, so handing the file to someone else hands them the steps and not the
+    tape. Scripts that lean only on firmware — a boot capture, a BASIC session —
+    are the ones that survive the trip.
+  </p>
+
+  <h2>What does not work yet</h2>
+
+  <ul>
+    <li>
+      <strong>A script cannot react.</strong> There is no branch, no loop and no
+      way to feed one step's answer into the next. That rules out any run whose
+      shape depends on the outcome: you cannot script "keep playing until the
+      last life is gone", because the file has no way to find out. The working
+      approach is to run wide — more frames than the outcome should need — and
+      confirm from what came back, reading a counter on the screen rather than
+      trusting the frame count. A run that has to decide as it goes belongs on{' '}
+      <a href="/docs/mcp/">MCP</a>.
+    </li>
+    <li>
+      <strong>A failed step takes the report with it.</strong> Any step that
+      errors ends the run: the message goes to standard error, the exit status
+      is non-zero, and nothing is printed for the steps that already succeeded.
+      A script that dies on step nine tells you nothing about steps one to
+      eight.
+    </li>
+    <li>
+      <strong>The vocabulary is even; the support is not.</strong> Every binary
+      accepts all 47 step names, and a machine that cannot carry one out says
+      so at the moment it is asked — <code>query_ay</code> on a C64 comes back
+      as a step needing a handler that machine does not have. No call lists
+      which steps a machine implements, so the answer is found by asking.
+    </li>
+    <li>
+      <strong>The flags around the script are per-machine.</strong> The C64
+      takes <code>--frames</code>, <code>--screenshot</code> and{' '}
+      <code>--wait-for-boot</code> on the command line; the Spectrum takes none
+      of the three and rejects them outright. Reading one machine's headless
+      help teaches you that machine and no other. The steps inside the file are
+      the portable part.
+    </li>
+    <li>
+      <strong>The report envelope is per-machine too.</strong> The{' '}
+      <code>observations</code> array is common ground, and the fields beside it
+      are not: a Spectrum closes with its tape state, a C64 with boot and trace
+      fields, a NES with whether a cartridge is loaded. Read{' '}
+      <code>observations</code> and treat the rest as that machine's own.
+    </li>
+    <li>
+      <strong>No script on standard input.</strong>{' '}
+      <code>--script</code> takes a path and only a path; passing{' '}
+      <code>-</code> looks for a file called <code>-</code>. A generated script
+      has to be written to disk before it can be run.
+    </li>
+    <li>
+      <strong>No published schema.</strong> There is no JSON Schema to validate
+      a script against before running it, and no editor completion. Mistakes
+      surface as a rejection at load time, which is early, but it is still the
+      binary doing the proofreading.
+    </li>
+  </ul>
+</DocLayout>

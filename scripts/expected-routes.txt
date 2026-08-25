@@ -4,6 +4,7 @@
 /docs/changelog/
 /docs/getting-started/
 /docs/mcp/
+/docs/scripting/
 /docs/status/current-system-usability/
 /downloads/
 /systems/
