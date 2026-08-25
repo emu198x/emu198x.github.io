@@ -53,7 +53,7 @@ if (isMain) {
     }
 
     const scriptPath = capture.mode === 'script'
-      ? writeScript(system, output)
+      ? writeScript(system, output, sourceRoot)
       : null;
     const args = buildCargoArgs(capture, output, scriptPath, sourceRoot);
     const commandLine = ['cargo', ...args].join(' ');
@@ -129,19 +129,26 @@ function buildCargoArgs(capture, output, scriptPath, sourceRoot) {
   return args;
 }
 
-function writeScript(system, output) {
-  const script = system.capture.script.map((step) => replaceValues(step, output));
+function writeScript(system, output, sourceRoot) {
+  const script = system.capture.script.map((step) => replaceValues(step, output, sourceRoot));
   const path = join(tempRoot, `${system.id}.json`);
   writeFileSync(path, `${JSON.stringify(script, null, 2)}\n`);
   return path;
 }
 
-function replaceValues(value, output) {
-  if (typeof value === 'string') return value.replaceAll('{output}', output);
-  if (Array.isArray(value)) return value.map((item) => replaceValues(item, output));
+// Every token resolveToken() knows must be handled here too — a script-mode
+// capture (ZX Spectrum targets) writes its args through this path instead of
+// resolveToken, and a token substituted in one path but not the other fails
+// unresolved deep inside the cargo binary instead of being caught cleanly as
+// a missing input.
+export function replaceValues(value, output, sourceRoot) {
+  if (typeof value === 'string') {
+    return value.replaceAll('{output}', output).replaceAll('{source}', sourceRoot);
+  }
+  if (Array.isArray(value)) return value.map((item) => replaceValues(item, output, sourceRoot));
   if (value && typeof value === 'object') {
     return Object.fromEntries(
-      Object.entries(value).map(([key, child]) => [key, replaceValues(child, output)]),
+      Object.entries(value).map(([key, child]) => [key, replaceValues(child, output, sourceRoot)]),
     );
   }
   return value;

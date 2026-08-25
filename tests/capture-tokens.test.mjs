@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { resolveToken, missingInputs } from '../scripts/capture-boot-screenshots.mjs';
+import { resolveToken, missingInputs, replaceValues } from '../scripts/capture-boot-screenshots.mjs';
 
 test('{source} resolves to the flagship root', () => {
   const arg = resolveToken('{source}/test-data/sega/synthetic-cart/game-gear.gg', {}, '/out.png', null, '/src');
@@ -40,4 +40,17 @@ test('a required {source} file that exists once resolved is not reported missing
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('replaceValues substitutes {source} everywhere it substitutes {output}', () => {
+  const step = {
+    kind: 'load',
+    path: '{source}/test-data/spectrum/game.tap',
+    args: ['{output}', '{source}/roms/rom.bin'],
+  };
+  assert.deepEqual(replaceValues(step, '/out.png', '/src'), {
+    kind: 'load',
+    path: '/src/test-data/spectrum/game.tap',
+    args: ['/out.png', '/src/roms/rom.bin'],
+  });
 });
