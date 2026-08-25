@@ -20,6 +20,21 @@ const cards = fleet.map((entry) => {
 const capturedCount = cards.filter((card) => card.state === 'captured').length;
 const uncapturedCount = cards.length - capturedCount;
 
+// A silent gap is what this rebuild exists to remove: when a machine has no
+// image, the fleet list says so on its own card, but the page also names it
+// here, once, with the reason a reader can act on rather than a bare count.
+const uncapturedCards = cards.filter((card) => card.state !== 'captured');
+const uncapturedNotes = uncapturedCards.map(({ entry, capture }) => {
+  if (!capture) {
+    return `${entry.machineId} (no capture attempt is recorded yet)`;
+  }
+  const mediaEnv = capture.capture?.mediaEnv;
+  const mediaLabel = capture.capture?.mediaLabel ?? 'media';
+  return mediaEnv
+    ? `${entry.machineId} (waiting on a locally supplied ${mediaLabel} — set ${mediaEnv} to publish it)`
+    : `${entry.machineId} (capture attempted, no image yet)`;
+});
+
 // Some machines cover more than one hardware variant, each with its own
 // capture and its own rights note — read per-machine from the fleet entry,
 // never re-driven from the site's flat capture list.
@@ -89,6 +104,22 @@ const variantRows = fleet.flatMap((entry) => {
           </article>
         ))}
       </div>
+      {uncapturedCount > 0 ? (
+        <p class="uncaptured-note">
+          {uncapturedCount} of {cards.length} machines in the registry still has no capture:{' '}
+          {uncapturedNotes.join('; ')}.
+          {uncapturedCards.some((card) => card.entry.machineId === 'sord-m5') && (
+            <>
+              {' '}
+              The Sord M5's own firmware leaves the screen blank on its own — it needs a
+              cartridge to paint anything — so this one stays honestly uncaptured until local
+              cartridge media is supplied.
+            </>
+          )}
+        </p>
+      ) : (
+        <p class="uncaptured-note">Every machine in the registry has a capture.</p>
+      )}
     </section>
 
     {variantRows.length > 0 && (
@@ -278,6 +309,13 @@ const variantRows = fleet.flatMap((entry) => {
     color: var(--ink-soft);
     font-size: 0.84rem;
     line-height: 1.45;
+  }
+
+  .uncaptured-note {
+    margin: 1.25rem 0 0;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+    line-height: 1.5;
   }
 
   .table-wrap {
