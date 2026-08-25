@@ -4,16 +4,20 @@
  * stops the build before a single page renders.
  */
 import { resolve, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { readRegistry } from './registry.js';
 import { readEvidence } from './evidence.js';
 import { buildFleet } from './fleet.js';
 import { bootScreenshots, normalizeCaptureTarget } from '../data/boot-screenshots.js';
 
-const siteRoot = resolve(fileURLToPath(new URL('../..', import.meta.url)));
-
+// Astro bundles this module into dist/.prerender/chunks/ at build time, so
+// import.meta.url follows the file into the bundle output rather than
+// staying at its source location — a location-derived root here would
+// resolve relative to the wrong directory once bundled and only happen to
+// match while running unbundled (e.g. under the unit tests). process.cwd()
+// is the stable anchor: Astro's build and every scripts/ entry point run
+// with the working directory at the project root.
 export function sourceRoot() {
-  return resolve(process.env.EMU198X_SOURCE_ROOT ?? join(siteRoot, '..', 'emu198x'));
+  return resolve(process.env.EMU198X_SOURCE_ROOT ?? join(process.cwd(), '..', 'emu198x'));
 }
 
 // The raw records in boot-screenshots.js are terse: most omit rightsNote,
@@ -45,21 +49,34 @@ export function loadSiteData() {
     );
   }
 
-  // rightsNote is guaranteed by normalizeCaptureTarget's default whenever a
-  // capture has an image, but a capture that *has* an image and reaches the
-  // page without a note must fail loudly, not render an empty note silently
-  // — see the imagery-rights decision. A capture with no image correctly
-  // carries no rightsNote (see hasImage in boot-screenshots.js): asserting
-  // rights over a capture that never ran would be the same kind of false
-  // claim, just phrased as a note instead of an image.
-  for (const entry of fleet) {
-    for (const capture of entry.captures) {
-      if (capture.hasImage && !capture.rightsNote) {
-        throw new Error(`site-data: ${entry.machineId} capture ${capture.id} has no rightsNote`);
-      }
-    }
-  }
+  assertRightsNotes(fleet);
 
   cached = { fleet, evidence, sourceRoot: root };
   return cached;
+}
+
+// rightsNote is guaranteed by normalizeCaptureTarget's default whenever a
+// capture has an image, but a capture that *has* an image and reaches the
+// page without a note must fail loudly, not render an empty note silently
+// — see the imagery-rights decision. A capture with no image correctly
+// carries no rightsNote (see hasImage in boot-screenshots.js): asserting
+// rights over a capture that never ran would be the same kind of false
+// claim, just phrased as a note instead of an image.
+//
+// Variants are checked with their parent, never skipped: they hang off
+// capture.variants rather than entry.captures, so a loop over entry.captures
+// alone walks past all nineteen of them — and the systems page publishes a
+// rights cell for every one. A note blanked to '' slips past the normalizer's
+// `?? defaultRightsNote` default untouched, which is how a variant row shipped
+// a visible screenshot beside an empty rights claim with the build still green.
+export function assertRightsNotes(fleet) {
+  for (const entry of fleet) {
+    for (const capture of entry.captures) {
+      for (const target of [capture, ...(capture.variants ?? [])]) {
+        if (target.hasImage && !target.rightsNote) {
+          throw new Error(`site-data: ${entry.machineId} capture ${target.id} has no rightsNote`);
+        }
+      }
+    }
+  }
 }

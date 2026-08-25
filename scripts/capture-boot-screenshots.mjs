@@ -7,86 +7,93 @@ import { captureTargets } from '../src/data/boot-screenshots.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const siteRoot = resolve(__dirname, '..');
-const sourceRoot = resolve(process.env.EMU198X_SOURCE_ROOT ?? join(siteRoot, '..', 'Emu198x'));
+// Lowercase: the real checkout is emu198x/emu198x.github.io's sibling
+// emu198x/emu198x. macOS matches "Emu198x" case-insensitively so a
+// capitalised default would look fine here and fail as a missing directory on
+// Linux CI.
+const sourceRoot = resolve(process.env.EMU198X_SOURCE_ROOT ?? join(siteRoot, '..', 'emu198x'));
 const tempRoot = join(siteRoot, '.tmp', 'boot-screenshot-scripts');
 const bootTargets = captureTargets();
 
-const options = parseArgs(process.argv.slice(2));
-const selected = options.only.size > 0
-  ? bootTargets.filter((system) => options.only.has(system.id) || options.only.has(system.parentId))
-  : bootTargets;
+const isMain = process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url);
+if (isMain) {
+  const options = parseArgs(process.argv.slice(2));
+  const selected = options.only.size > 0
+    ? bootTargets.filter((system) => options.only.has(system.id) || options.only.has(system.parentId))
+    : bootTargets;
 
-if (options.list) {
-  for (const system of bootTargets) {
-    const media = system.capture.mediaEnv ? ` media=${system.capture.mediaEnv}` : '';
-    const parent = system.parentName ? ` (${system.parentName})` : '';
-    console.log(`${system.id.padEnd(24)} ${system.capture.package}${media}${parent}`);
+  if (options.list) {
+    for (const system of bootTargets) {
+      const media = system.capture.mediaEnv ? ` media=${system.capture.mediaEnv}` : '';
+      const parent = system.parentName ? ` (${system.parentName})` : '';
+      console.log(`${system.id.padEnd(24)} ${system.capture.package}${media}${parent}`);
+    }
+    process.exit(0);
   }
-  process.exit(0);
+
+  if (selected.length === 0) {
+    console.error(`No systems matched --only=${[...options.only].join(',')}`);
+    process.exit(2);
+  }
+
+  mkdirSync(tempRoot, { recursive: true });
+
+  let captured = 0;
+  let skipped = 0;
+  let failed = 0;
+
+  for (const system of selected) {
+    const output = join(siteRoot, 'public', system.image.replace(/^\//, ''));
+    const capture = system.capture;
+    const missing = missingInputs(capture, sourceRoot);
+    if (missing.length > 0) {
+      skipped += 1;
+      console.log(`skip ${system.id}: ${missing.join('; ')}`);
+      continue;
+    }
+
+    const scriptPath = capture.mode === 'script'
+      ? writeScript(system, output, sourceRoot)
+      : null;
+    const args = buildCargoArgs(capture, output, scriptPath, sourceRoot);
+    const commandLine = ['cargo', ...args].join(' ');
+
+    if (options.dryRun) {
+      console.log(`dry ${system.id}: ${commandLine}`);
+      continue;
+    }
+
+    mkdirSync(dirname(output), { recursive: true });
+    console.log(`capture ${system.id} -> ${relativeToSite(output)}`);
+    const result = spawnSync('cargo', args, {
+      cwd: sourceRoot,
+      env: process.env,
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+
+    if (result.status !== 0) {
+      failed += 1;
+      console.error(`fail ${system.id}: exit ${result.status}`);
+      writeLastLines(result.stdout, 'stdout');
+      writeLastLines(result.stderr, 'stderr');
+      continue;
+    }
+
+    if (!existsSync(output)) {
+      failed += 1;
+      console.error(`fail ${system.id}: command completed but did not write ${output}`);
+      writeLastLines(result.stdout, 'stdout');
+      writeLastLines(result.stderr, 'stderr');
+      continue;
+    }
+
+    captured += 1;
+  }
+
+  console.log(`boot screenshots: ${captured} captured, ${skipped} skipped, ${failed} failed`);
+  process.exit(failed > 0 ? 1 : 0);
 }
-
-if (selected.length === 0) {
-  console.error(`No systems matched --only=${[...options.only].join(',')}`);
-  process.exit(2);
-}
-
-mkdirSync(tempRoot, { recursive: true });
-
-let captured = 0;
-let skipped = 0;
-let failed = 0;
-
-for (const system of selected) {
-  const output = join(siteRoot, 'public', system.image.replace(/^\//, ''));
-  const capture = system.capture;
-  const missing = missingInputs(capture);
-  if (missing.length > 0) {
-    skipped += 1;
-    console.log(`skip ${system.id}: ${missing.join('; ')}`);
-    continue;
-  }
-
-  const scriptPath = capture.mode === 'script'
-    ? writeScript(system, output)
-    : null;
-  const args = buildCargoArgs(capture, output, scriptPath);
-  const commandLine = ['cargo', ...args].join(' ');
-
-  if (options.dryRun) {
-    console.log(`dry ${system.id}: ${commandLine}`);
-    continue;
-  }
-
-  mkdirSync(dirname(output), { recursive: true });
-  console.log(`capture ${system.id} -> ${relativeToSite(output)}`);
-  const result = spawnSync('cargo', args, {
-    cwd: sourceRoot,
-    env: process.env,
-    encoding: 'utf8',
-    stdio: ['ignore', 'pipe', 'pipe'],
-  });
-
-  if (result.status !== 0) {
-    failed += 1;
-    console.error(`fail ${system.id}: exit ${result.status}`);
-    writeLastLines(result.stdout, 'stdout');
-    writeLastLines(result.stderr, 'stderr');
-    continue;
-  }
-
-  if (!existsSync(output)) {
-    failed += 1;
-    console.error(`fail ${system.id}: command completed but did not write ${output}`);
-    writeLastLines(result.stdout, 'stdout');
-    writeLastLines(result.stderr, 'stderr');
-    continue;
-  }
-
-  captured += 1;
-}
-
-console.log(`boot screenshots: ${captured} captured, ${skipped} skipped, ${failed} failed`);
-process.exit(failed > 0 ? 1 : 0);
 
 function parseArgs(args) {
   const parsed = {
@@ -114,33 +121,40 @@ function parseArgs(args) {
   return parsed;
 }
 
-function buildCargoArgs(capture, output, scriptPath) {
+function buildCargoArgs(capture, output, scriptPath, sourceRoot) {
   const args = ['run', '--release', '-q', '-p', capture.package, '--no-default-features', '--'];
   for (const arg of capture.args) {
-    args.push(resolveToken(arg, capture, output, scriptPath));
+    args.push(resolveToken(arg, capture, output, scriptPath, sourceRoot));
   }
   return args;
 }
 
-function writeScript(system, output) {
-  const script = system.capture.script.map((step) => replaceValues(step, output));
+function writeScript(system, output, sourceRoot) {
+  const script = system.capture.script.map((step) => replaceValues(step, output, sourceRoot));
   const path = join(tempRoot, `${system.id}.json`);
   writeFileSync(path, `${JSON.stringify(script, null, 2)}\n`);
   return path;
 }
 
-function replaceValues(value, output) {
-  if (typeof value === 'string') return value.replaceAll('{output}', output);
-  if (Array.isArray(value)) return value.map((item) => replaceValues(item, output));
+// Every token resolveToken() knows must be handled here too — a script-mode
+// capture (ZX Spectrum targets) writes its args through this path instead of
+// resolveToken, and a token substituted in one path but not the other fails
+// unresolved deep inside the cargo binary instead of being caught cleanly as
+// a missing input.
+export function replaceValues(value, output, sourceRoot) {
+  if (typeof value === 'string') {
+    return value.replaceAll('{output}', output).replaceAll('{source}', sourceRoot);
+  }
+  if (Array.isArray(value)) return value.map((item) => replaceValues(item, output, sourceRoot));
   if (value && typeof value === 'object') {
     return Object.fromEntries(
-      Object.entries(value).map(([key, child]) => [key, replaceValues(child, output)]),
+      Object.entries(value).map(([key, child]) => [key, replaceValues(child, output, sourceRoot)]),
     );
   }
   return value;
 }
 
-function missingInputs(capture) {
+export function missingInputs(capture, sourceRoot) {
   const missing = [];
   if (capture.mediaEnv) {
     const value = process.env[capture.mediaEnv];
@@ -152,7 +166,7 @@ function missingInputs(capture) {
   }
 
   for (const path of capture.requiredFiles ?? []) {
-    const resolved = expandPath(path);
+    const resolved = expandPath(path.replaceAll('{source}', sourceRoot));
     if (!existsSync(resolved)) {
       missing.push(`missing ${path}`);
     }
@@ -161,11 +175,13 @@ function missingInputs(capture) {
   return missing;
 }
 
-function resolveToken(arg, capture, output, scriptPath) {
+export function resolveToken(arg, capture, output, scriptPath, sourceRoot) {
   if (arg === '{output}') return output;
   if (arg === '{script}') return scriptPath;
   if (arg === '{media}') return expandPath(process.env[capture.mediaEnv] ?? '');
-  return expandPath(arg.replaceAll('{output}', output));
+  return expandPath(
+    arg.replaceAll('{output}', output).replaceAll('{source}', sourceRoot),
+  );
 }
 
 function expandPath(path) {

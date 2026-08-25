@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { buildFleet } from '../src/lib/fleet.js';
+import { buildFleet, uncaptured } from '../src/lib/fleet.js';
 
 const machines = [
   { machineId: 'acorn-atom', crate: 'c1', label: 'l1', milestone: 'm1' },
@@ -59,4 +59,25 @@ test('two captures of different kinds on one machine are fine', () => {
     ],
   });
   assert.equal(fleet[0].captures.length, 2);
+});
+
+// uncaptured() and the systems page must agree on what "captured" means.
+// They did not: the page asks whether an image exists, the helper only asked
+// whether a record exists, so a machine gated on local media counted as
+// captured here and as uncaptured there. Two definitions in one codebase is
+// how a page and its own helper come to report different numbers.
+test('uncaptured counts a record with no image as uncaptured', () => {
+  const fleet = buildFleet({
+    machines,
+    captures: [
+      { id: 'acorn-atom', machineId: 'acorn-atom', kind: 'boot', hasImage: true },
+      { id: 'sega-game-gear', machineId: 'sega-game-gear', kind: 'boot', hasImage: false },
+    ],
+  });
+  assert.deepEqual(uncaptured(fleet), ['sega-game-gear']);
+});
+
+test('uncaptured still counts a machine with no record at all', () => {
+  const fleet = buildFleet({ machines, captures: [] });
+  assert.deepEqual(uncaptured(fleet), ['acorn-atom', 'sega-game-gear']);
 });

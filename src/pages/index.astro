@@ -1,5 +1,26 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
+import { loadSiteData } from '@lib/site-data.js';
+import { countByGroup } from '@lib/fleet.js';
+
+// Measured from the registry, never typed here. These three numbers were
+// literals — 6 / 22 / 28 — and this branch made them wrong: the fleet is 6
+// primary and 24 extended, so / would have said 28 runtimes while /systems/
+// said 30 machines in the same build. 28 is the stale figure fleet.js names as
+// the bug this rebuild exists to remove, so it must not be re-typed with
+// today's values; it has to come from the same data /systems/ counts.
+//
+// Primary and Extended are counted strictly, from each machine's own boot
+// capture. Neither is derived as the other's remainder: a machine whose
+// surface is not stated would then be silently filed under one of them, which
+// is the kind of unmeasured claim this page just stopped making.
+const { fleet } = loadSiteData();
+const groups = countByGroup(fleet);
+const primaryCount = groups.get('Primary') ?? 0;
+const extendedCount = groups.get('Extended') ?? 0;
+// Every machine in the registry ships as a scriptable, MCP-driven runtime,
+// primary and extended alike — so this is the registry's own size.
+const runtimeCount = fleet.length;
 ---
 
 <BaseLayout title="Emu198x" description="A public evidence site for the Emu198x multi-system emulator suite.">
@@ -27,9 +48,9 @@ import BaseLayout from '@layouts/BaseLayout.astro';
             <span>July 2026</span>
           </div>
           <div class="stat-grid">
-            <div class="stat"><strong>6</strong><span>primary systems</span></div>
-            <div class="stat"><strong>22</strong><span>extended systems</span></div>
-            <div class="stat"><strong>28</strong><span>MCP-driven runtimes</span></div>
+            <div class="stat"><strong>{primaryCount}</strong><span>primary systems</span></div>
+            <div class="stat"><strong>{extendedCount}</strong><span>extended systems</span></div>
+            <div class="stat"><strong>{runtimeCount}</strong><span>MCP-driven runtimes</span></div>
             <div class="stat"><strong>All</strong><span>supported systems tracked</span></div>
           </div>
         </div>

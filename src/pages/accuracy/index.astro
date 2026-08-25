@@ -1,12 +1,17 @@
 ---
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { loadSiteData } from '@lib/site-data.js';
+import { bootCapture, isCaptured } from '@lib/fleet.js';
 
 const { fleet, evidence } = loadSiteData();
 
+// Captured means the boot capture has an image, and that rule lives in the
+// fleet module so this page and /systems/ cannot answer differently for the
+// same fleet — which is what happened while each held its own inline rule.
 const rows = fleet.map((entry) => {
-  const boot = entry.captures.find((capture) => capture.kind === 'boot') ?? null;
-  const bootLabel = boot?.hasImage
+  const boot = bootCapture(entry);
+  const captured = isCaptured(entry);
+  const bootLabel = captured
     ? 'Yes'
     : boot
       ? (boot.capture?.mediaEnv ? 'Waiting on local media' : 'Capture pending')
@@ -15,13 +20,14 @@ const rows = fleet.map((entry) => {
     entry,
     evidence: evidence.get(entry.machineId),
     boot,
+    captured,
     bootLabel,
   };
 });
 
 // A boot capture record is not a boot capture that exists — see hasImage in
 // boot-screenshots.js. Only images that actually exist count here.
-const capturedCount = rows.filter((row) => row.boot?.hasImage).length;
+const capturedCount = rows.filter((row) => row.captured).length;
 const uncapturedCount = rows.length - capturedCount;
 
 const sourceTiers = [

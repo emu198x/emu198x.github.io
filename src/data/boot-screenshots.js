@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { join } from 'node:path';
+import { resolve, sep } from 'node:path';
 
 const romRoot = '~/.emu198x/roms';
 
@@ -15,8 +15,29 @@ export const captureKindLabels = {
 // every capture record passes through (top-level and each variant alike),
 // so no page can render an <img>, count a capture, or print a rights note
 // for a capture that never ran.
-function publicImagePath(image) {
-  return join(process.cwd(), 'public', image.replace(/^\//, ''));
+// Only a real path under public/ can name a published capture, so anything
+// else fails here rather than being answered as a capture state.
+//
+// Probed directly, three shapes got an answer they had not earned: image: ''
+// made existsSync test public/ itself, so hasImage came back true, a rights
+// note printed over a capture that never ran, and <img src=""> resolved to the
+// page's own URL; '/../README.md' escaped public/ and did the same; '   ' was
+// false only because no file happens to be called that. None is reachable from
+// a current record — which is the point of closing them now, while nothing
+// depends on the old answers.
+function publicImagePath(id, image) {
+  if (typeof image !== 'string' || image.trim() === '') {
+    throw new Error(`boot-screenshots: ${id} has no image path`);
+  }
+  const publicRoot = resolve(process.cwd(), 'public');
+  const path = resolve(publicRoot, image.replace(/^\/+/, ''));
+  if (path !== publicRoot && !path.startsWith(publicRoot + sep)) {
+    throw new Error(`boot-screenshots: ${id} image ${image} resolves outside public/`);
+  }
+  if (path === publicRoot) {
+    throw new Error(`boot-screenshots: ${id} image ${image} names public/ itself, not a file`);
+  }
+  return path;
 }
 
 const defaultRightsNote = 'Captured from locally supplied firmware or media. Emu198x does not distribute ROMs, disks, tapes, or cartridges.';
@@ -221,13 +242,16 @@ export const bootScreenshots = [
     title: 'Nintendo NES cartridge boot',
     group: 'Primary',
     image: '/media/boot/nes.png',
-    caption: 'Cartridge boot capture. Set EMU198X_BOOT_NES_ROM to publish this image.',
-    rightsNote: defaultRightsNote,
+    caption: 'Synthetic plate cartridge: the Emu198x wordmark, set in this machine\'s own tiles and drawn through its real video path.',
+    rightsNote: 'Captured from a synthetic cartridge built from source in this project. No third-party software is involved.',
     capture: {
       package: 'emu198x-nes',
-      args: ['--rom', '{media}', '--frames', '300', '--screenshot', '{output}'],
-      mediaEnv: 'EMU198X_BOOT_NES_ROM',
-      mediaLabel: 'NES ROM',
+      args: [
+        '--rom', '{source}/test-data/synthetic-cartridges/nintendo-nes-logo.nes',
+        '--frames', '300',
+        '--screenshot', '{output}',
+      ],
+      requiredFiles: ['{source}/test-data/synthetic-cartridges/nintendo-nes-logo.nes'],
     },
   },
   {
@@ -263,12 +287,16 @@ export const bootScreenshots = [
     name: 'Nintendo Game Boy',
     group: 'Primary',
     image: '/media/boot/game-boy.png',
-    caption: 'Cartridge boot capture. Set EMU198X_BOOT_GAME_BOY_ROM to publish this image.',
+    caption: 'Synthetic plate cartridge: the Emu198x wordmark, set in this machine\'s own tiles and drawn through its real video path.',
+    rightsNote: 'Captured from a synthetic cartridge built from source in this project. No third-party software is involved.',
     capture: {
       package: 'emu198x-game-boy',
-      args: ['--rom', '{media}', '--frames', '300', '--screenshot', '{output}'],
-      mediaEnv: 'EMU198X_BOOT_GAME_BOY_ROM',
-      mediaLabel: 'Game Boy ROM',
+      args: [
+        '--rom', '{source}/test-data/synthetic-cartridges/nintendo-game-boy-logo.gb',
+        '--frames', '300',
+        '--screenshot', '{output}',
+      ],
+      requiredFiles: ['{source}/test-data/synthetic-cartridges/nintendo-game-boy-logo.gb'],
     },
   },
   {
@@ -336,12 +364,16 @@ export const bootScreenshots = [
     name: 'Sega Master System',
     group: 'Extended',
     image: '/media/boot/sega-master-system.png',
-    caption: 'Cartridge title capture. Set EMU198X_BOOT_SMS_CART to publish this image.',
+    caption: 'Synthetic boot cartridge: a known colour written through CRAM and the VDP registers.',
+    rightsNote: 'Captured from a synthetic cartridge built from source in this project. No third-party software is involved.',
     capture: {
       package: 'emu198x-sega-master-system',
-      args: ['--cart', '{media}', '--frames', '300', '--screenshot', '{output}'],
-      mediaEnv: 'EMU198X_BOOT_SMS_CART',
-      mediaLabel: 'Master System cartridge',
+      args: [
+        '--cart', '{source}/test-data/sega/synthetic-cart/master-system.sms',
+        '--frames', '120',
+        '--screenshot', '{output}',
+      ],
+      requiredFiles: ['{source}/test-data/sega/synthetic-cart/master-system.sms'],
     },
   },
   {
@@ -491,12 +523,36 @@ export const bootScreenshots = [
     name: 'Sega SG-1000',
     group: 'Extended',
     image: '/media/boot/sega-sg-1000.png',
-    caption: 'Cartridge title capture. Set EMU198X_BOOT_SG1000_CART to publish this image.',
+    caption: 'Synthetic boot cartridge: a known colour written through CRAM and the VDP registers.',
+    rightsNote: 'Captured from a synthetic cartridge built from source in this project. No third-party software is involved.',
     capture: {
       package: 'emu198x-sega-sg-1000',
-      args: ['--cart', '{media}', '--frames', '300', '--screenshot', '{output}'],
-      mediaEnv: 'EMU198X_BOOT_SG1000_CART',
-      mediaLabel: 'SG-1000 cartridge',
+      args: [
+        '--cart', '{source}/test-data/sega/synthetic-cart/sg-1000.sg',
+        '--frames', '120',
+        '--screenshot', '{output}',
+      ],
+      requiredFiles: ['{source}/test-data/sega/synthetic-cart/sg-1000.sg'],
+    },
+  },
+  {
+    id: 'sega-game-gear',
+    machineId: 'sega-game-gear',
+    name: 'Sega Game Gear',
+    kind: 'boot',
+    title: 'Game Gear boot',
+    group: 'Extended',
+    image: '/media/boot/sega-game-gear.png',
+    caption: 'Synthetic boot cartridge: a known colour written through CRAM and the VDP registers. The Game Gear has no firmware to boot into, so a cartridge is the only way to show it running at all.',
+    rightsNote: 'Captured from a synthetic cartridge built from source in this project. No third-party software is involved.',
+    capture: {
+      package: 'emu198x-sega-game-gear',
+      args: [
+        '--cart', '{source}/test-data/sega/synthetic-cart/game-gear.gg',
+        '--frames', '120',
+        '--screenshot', '{output}',
+      ],
+      requiredFiles: ['{source}/test-data/sega/synthetic-cart/game-gear.gg'],
     },
   },
   {
@@ -505,12 +561,16 @@ export const bootScreenshots = [
     name: 'Atari 2600',
     group: 'Extended',
     image: '/media/boot/atari-2600.png',
-    caption: 'Cartridge boot capture. Set EMU198X_BOOT_ATARI_2600_CART to publish this image.',
+    caption: 'Synthetic plate cartridge: the Emu198x wordmark, set in this machine\'s own tiles and drawn through its real video path.',
+    rightsNote: 'Captured from a synthetic cartridge built from source in this project. No third-party software is involved.',
     capture: {
       package: 'emu198x-atari-2600',
-      args: ['--cart', '{media}', '--frames', '300', '--screenshot', '{output}'],
-      mediaEnv: 'EMU198X_BOOT_ATARI_2600_CART',
-      mediaLabel: 'Atari 2600 cartridge',
+      args: [
+        '--cart', '{source}/test-data/synthetic-cartridges/atari-2600-logo.bin',
+        '--frames', '300',
+        '--screenshot', '{output}',
+      ],
+      requiredFiles: ['{source}/test-data/synthetic-cartridges/atari-2600-logo.bin'],
     },
   },
   {
@@ -519,13 +579,16 @@ export const bootScreenshots = [
     name: 'Atari 5200',
     group: 'Extended',
     image: '/media/boot/atari-5200.png',
-    caption: 'Cartridge boot capture. Set EMU198X_BOOT_ATARI_5200_CART to publish this image.',
+    caption: 'Synthetic plate cartridge: the Emu198x wordmark, set in this machine\'s own tiles and drawn through its real video path.',
+    rightsNote: 'Captured from a synthetic cartridge built from source in this project. No third-party software is involved.',
     capture: {
       package: 'emu198x-atari-5200',
-      args: ['--bios', `${romRoot}/atari-5200/5200.rom`, '--cart', '{media}', '--frames', '320', '--screenshot', '{output}'],
-      mediaEnv: 'EMU198X_BOOT_ATARI_5200_CART',
-      mediaLabel: 'Atari 5200 cartridge',
-      requiredFiles: [`${romRoot}/atari-5200/5200.rom`],
+      args: [
+        '--cart', '{source}/test-data/synthetic-cartridges/atari-5200-logo.bin',
+        '--frames', '320',
+        '--screenshot', '{output}',
+      ],
+      requiredFiles: ['{source}/test-data/synthetic-cartridges/atari-5200-logo.bin'],
     },
   },
   {
@@ -534,13 +597,16 @@ export const bootScreenshots = [
     name: 'Atari 7800',
     group: 'Extended',
     image: '/media/boot/atari-7800.png',
-    caption: 'Cartridge boot capture. Set EMU198X_BOOT_ATARI_7800_CART to publish this image.',
+    caption: 'Synthetic plate cartridge: the Emu198x wordmark, set in this machine\'s own tiles and drawn through its real video path.',
+    rightsNote: 'Captured from a synthetic cartridge built from source in this project. No third-party software is involved.',
     capture: {
       package: 'emu198x-atari-7800',
-      args: ['--bios', `${romRoot}/atari-7800/Atari 7800 BIOS (1984)(Atari)(NTSC).bin`, '--cart', '{media}', '--frames', '300', '--screenshot', '{output}'],
-      mediaEnv: 'EMU198X_BOOT_ATARI_7800_CART',
-      mediaLabel: 'Atari 7800 cartridge',
-      requiredFiles: [`${romRoot}/atari-7800/Atari 7800 BIOS (1984)(Atari)(NTSC).bin`],
+      args: [
+        '--cart', '{source}/test-data/synthetic-cartridges/atari-7800-logo.bin',
+        '--frames', '300',
+        '--screenshot', '{output}',
+      ],
+      requiredFiles: ['{source}/test-data/synthetic-cartridges/atari-7800-logo.bin'],
     },
   },
   {
@@ -621,6 +687,26 @@ export const bootScreenshots = [
     },
   },
   {
+    id: 'amstrad-cpc',
+    machineId: 'amstrad-cpc',
+    name: 'Amstrad CPC 464',
+    kind: 'boot',
+    title: 'Amstrad CPC 464 boot',
+    group: 'Extended',
+    image: '/media/boot/amstrad-cpc.png',
+    caption: 'CPC 464 firmware boot capture.',
+    rightsNote: defaultRightsNote,
+    capture: {
+      package: 'emu198x-amstrad-cpc',
+      args: [
+        '--rom', `${romRoot}/amstrad-cpc/cpc464.rom`,
+        '--frames', '300',
+        '--screenshot', '{output}',
+      ],
+      requiredFiles: [`${romRoot}/amstrad-cpc/cpc464.rom`],
+    },
+  },
+  {
     id: 'acorn-bbc-micro',
     machineId: 'acorn-bbc-micro',
     name: 'Acorn BBC Micro',
@@ -665,7 +751,7 @@ export function captureTargets() {
 
 export function normalizeCaptureTarget(target, parent) {
   const kind = target.kind ?? 'boot';
-  const hasImage = existsSync(publicImagePath(target.image));
+  const hasImage = existsSync(publicImagePath(target.id, target.image));
   // A rights note asserts a capture happened. Never carry one for a record
   // whose image doesn't exist — that record is an intent, not evidence.
   const rightsNote = hasImage ? (target.rightsNote ?? defaultRightsNote) : null;
