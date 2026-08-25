@@ -35,6 +35,12 @@ export function buildFleet({ machines, captures }) {
   return [...byMachine.values()].sort((a, b) => a.machineId.localeCompare(b.machineId));
 }
 
+// "Captured" means an image exists, not that a record does — the same
+// definition the systems page uses. A record gated on local media is a real
+// and honest state, but it is not a capture, and counting it as one is how a
+// page and its own helper end up reporting different totals for one fleet.
 export function uncaptured(fleet) {
-  return fleet.filter((entry) => entry.captures.length === 0).map((entry) => entry.machineId);
+  return fleet
+    .filter((entry) => !entry.captures.some((capture) => capture.hasImage))
+    .map((entry) => entry.machineId);
 }
