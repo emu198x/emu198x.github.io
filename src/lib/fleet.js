@@ -59,3 +59,22 @@ export function isCaptured(entry) {
 export function uncaptured(fleet) {
   return fleet.filter((entry) => !isCaptured(entry)).map((entry) => entry.machineId);
 }
+
+// The fleet's own count of each support surface, measured from the registry
+// rather than typed into a page. The homepage published 6 / 22 / 28 as
+// literals; this branch made them wrong, and 28 is the stale total named at
+// the top of this file as the number the rebuild exists to remove.
+//
+// A machine's surface is stated on its boot capture, so it is read through
+// bootCapture — a software capture is not a statement about which surface the
+// machine ships on. A machine with no boot capture is counted under a null
+// group rather than dropped: a machine that is in the registry and missing
+// from every total is exactly the silent gap this site is built against.
+export function countByGroup(fleet) {
+  const counts = new Map();
+  for (const entry of fleet) {
+    const group = bootCapture(entry)?.group ?? null;
+    counts.set(group, (counts.get(group) ?? 0) + 1);
+  }
+  return counts;
+}
