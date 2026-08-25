@@ -3,6 +3,7 @@
 /docs/
 /docs/changelog/
 /docs/getting-started/
+/docs/mcp/
 /docs/status/current-system-usability/
 /downloads/
 /systems/
