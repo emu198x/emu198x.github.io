@@ -3,9 +3,11 @@
  * This site's nav. The furniture is shared (198x-ui); the routes are not — a
  * shared nav that knew them would have to be edited to add a page here.
  *
- * Automation sits second because it is what the suite is for. It points at
- * MCP, which is the front door to the automation set: scripting, capture and
- * observability are all one click on from there and from the docs sidebar.
+ * MCP sits second because driving a machine is what the suite is for, and MCP
+ * is the front door to it: scripting, capture and observability are one click
+ * on from there and from the docs sidebar. The entry is named for the page it
+ * opens rather than for the category, so that the other three read as its
+ * siblings instead of one of the four standing in for all of them.
  *
  * The wrapper only makes the shared nav sticky, which this site's header has
  * always been. Everything else about it comes from the kit.
@@ -14,7 +16,7 @@ import SiteNav from '@198x-ui/components/SiteNav.astro';
 
 const items = [
   { label: 'Start', href: '/docs/getting-started/' },
-  { label: 'Automation', href: '/docs/mcp/' },
+  { label: 'MCP', href: '/docs/mcp/' },
   { label: 'Systems', href: '/systems/' },
   { label: 'Accuracy', href: '/accuracy/' },
   { label: 'Download', href: '/downloads/' },
@@ -22,18 +24,27 @@ const items = [
 ];
 
 /**
- * Mark the entry for the page the reader is on. The kit renders `current` as
- * weight and colour *and* as aria-current, so a screen reader is told which
- * entry it is rather than being left to infer it from a shade it cannot see.
+ * Mark where the reader is, and say which kind of "here" it is.
  *
- * The match is exact, not by section. The kit emits aria-current="page", which
- * is a claim about this page and not about the branch it sits in; marking
- * "Docs" while the reader is on /docs/scripting/ would announce a link to
- * somewhere else as the current page. Deeper pages carry their own marking in
- * the documentation sidebar, where the match is exact too.
+ * An exact match is the page itself and marks `page`. A deeper page inside an
+ * entry's branch marks `section`, which the kit renders as aria-current="true"
+ * — ARIA's value for the current item in a set when that item is not the
+ * document you are on. Kit v0.3.0 could only say `page`, so this matched
+ * exactly and left a reader on /systems/nintendo-nes/ with nothing marked at
+ * all; v0.3.1 added the distinction rather than have one value mean both.
+ *
+ * "/" is excluded from section matching because every path starts with it, and
+ * an entry that is always current tells the reader nothing.
  */
 const here = Astro.url.pathname;
-const marked = items.map((item) => ({ ...item, current: here === item.href }));
+
+function state(href) {
+  if (here === href) return 'page';
+  if (href !== '/' && here.startsWith(href)) return 'section';
+  return false;
+}
+
+const marked = items.map((item) => ({ ...item, current: state(item.href) }));
 ---
 
 <div class="site-header" data-pagefind-ignore>
