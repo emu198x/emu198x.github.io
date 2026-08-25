@@ -1,5 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { resolveToken, missingInputs } from '../scripts/capture-boot-screenshots.mjs';
 
 test('{source} resolves to the flagship root', () => {
@@ -15,4 +18,26 @@ test('a required {source} file that is absent is reported', () => {
   const missing = missingInputs({ requiredFiles: ['{source}/nope.gg'] }, '/src');
   assert.equal(missing.length, 1);
   assert.match(missing[0], /nope\.gg/);
+});
+
+// A negative-only test can't tell "{source} resolved and the file is still
+// missing" apart from "{source} never resolved at all" — both leave the raw
+// literal and the resolved path equally absent from disk. This positive
+// case only passes if the replaceAll('{source}', sourceRoot) actually ran:
+// the file exists solely at the *resolved* path, under a throwaway source
+// root, not depending on anything in the real flagship checkout.
+test('a required {source} file that exists once resolved is not reported missing', () => {
+  const root = mkdtempSync(join(tmpdir(), 'capture-tokens-'));
+  try {
+    mkdirSync(join(root, 'test-data', 'sega'), { recursive: true });
+    writeFileSync(join(root, 'test-data', 'sega', 'game-gear.gg'), '');
+
+    const missing = missingInputs(
+      { requiredFiles: ['{source}/test-data/sega/game-gear.gg'] },
+      root,
+    );
+    assert.deepEqual(missing, []);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
 });
