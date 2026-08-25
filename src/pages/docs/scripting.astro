@@ -93,76 +93,76 @@ const machineCount = fleet.length;
 
   <table>
     <thead>
-      <tr><th>Need</th><th>Steps</th></tr>
+    <tr><th>Need</th><th>Steps</th></tr>
     </thead>
     <tbody>
-      <tr>
-        <td>Advance execution</td>
-        <td>
-          <code>run_frames</code>, <code>run_ticks</code>, <code>step</code>,{' '}
-          <code>run_until_pc</code>, <code>run_until_any_pc</code>,{' '}
-          <code>run_until_line</code>, <code>run_until_mem_change</code>
-        </td>
-      </tr>
-      <tr>
-        <td>Wait for a state</td>
-        <td>
-          <code>wait_for_boot</code>, <code>wait_for_query_contains</code>,{' '}
-          <code>wait_for_query_bool</code>
-        </td>
-      </tr>
-      <tr>
-        <td>Inspect</td>
-        <td>
-          <code>query_paths</code>, <code>query</code>, <code>query_cpu</code>,{' '}
-          <code>query_ay</code>, <code>memory_read</code>, <code>disasm</code>,{' '}
-          <code>port_read</code>
-        </td>
-      </tr>
-      <tr>
-        <td>Change memory and ports</td>
-        <td>
-          <code>poke_byte</code>, <code>poke_word</code>,{' '}
-          <code>port_write</code>
-        </td>
-      </tr>
-      <tr>
-        <td>Watch for writes</td>
-        <td>
-          <code>watch_memory_start</code>, <code>watch_memory_log</code>,{' '}
-          <code>watch_memory_clear</code>, <code>watch_ay_start</code>,{' '}
-          <code>watch_ay_log</code>, <code>watch_ay_clear</code>
-        </td>
-      </tr>
-      <tr>
-        <td>Input</td>
-        <td>
-          <code>press_key</code>, <code>press_keys</code>,{' '}
-          <code>type_string</code>, <code>input</code>
-        </td>
-      </tr>
-      <tr>
-        <td>Media and state</td>
-        <td>
-          <code>load_media</code>, <code>media_transport</code>,{' '}
-          <code>autoload_tape</code>, <code>load_basic_program</code>,{' '}
-          <code>load_snapshot</code>, <code>save_snapshot</code>,{' '}
-          <code>set_machine</code>, <code>reset</code>
-        </td>
-      </tr>
-      <tr>
-        <td>Capture</td>
-        <td>
-          <code>save_screenshot</code>, <code>start_audio_recording</code>,{' '}
-          <code>stop_audio_recording</code>, <code>save_audio_capture</code>,{' '}
-          <code>clear_audio_capture</code>, <code>start_video_recording</code>,{' '}
-          <code>stop_video_recording</code>
-        </td>
-      </tr>
-      <tr>
-        <td>Source-level debugging</td>
-        <td><code>load_debug_info</code>, <code>debug_symbol</code></td>
-      </tr>
+    <tr>
+      <td>Advance execution</td>
+      <td>
+        <code>run_frames</code>, <code>run_ticks</code>, <code>step</code>,{' '}
+        <code>run_until_pc</code>, <code>run_until_any_pc</code>,{' '}
+        <code>run_until_line</code>, <code>run_until_mem_change</code>
+      </td>
+    </tr>
+    <tr>
+      <td>Wait for a state</td>
+      <td>
+        <code>wait_for_boot</code>, <code>wait_for_query_contains</code>,{' '}
+        <code>wait_for_query_bool</code>
+      </td>
+    </tr>
+    <tr>
+      <td>Inspect</td>
+      <td>
+        <code>query_paths</code>, <code>query</code>, <code>query_cpu</code>,{' '}
+        <code>query_ay</code>, <code>memory_read</code>, <code>disasm</code>,{' '}
+        <code>port_read</code>
+      </td>
+    </tr>
+    <tr>
+      <td>Change memory and ports</td>
+      <td>
+        <code>poke_byte</code>, <code>poke_word</code>,{' '}
+        <code>port_write</code>
+      </td>
+    </tr>
+    <tr>
+      <td>Watch for writes</td>
+      <td>
+        <code>watch_memory_start</code>, <code>watch_memory_log</code>,{' '}
+        <code>watch_memory_clear</code>, <code>watch_ay_start</code>,{' '}
+        <code>watch_ay_log</code>, <code>watch_ay_clear</code>
+      </td>
+    </tr>
+    <tr>
+      <td>Input</td>
+      <td>
+        <code>press_key</code>, <code>press_keys</code>,{' '}
+        <code>type_string</code>, <code>input</code>
+      </td>
+    </tr>
+    <tr>
+      <td>Media and state</td>
+      <td>
+        <code>load_media</code>, <code>media_transport</code>,{' '}
+        <code>autoload_tape</code>, <code>load_basic_program</code>,{' '}
+        <code>load_snapshot</code>, <code>save_snapshot</code>,{' '}
+        <code>set_machine</code>, <code>reset</code>
+      </td>
+    </tr>
+    <tr>
+      <td>Capture</td>
+      <td>
+        <code>save_screenshot</code>, <code>start_audio_recording</code>,{' '}
+        <code>stop_audio_recording</code>, <code>save_audio_capture</code>,{' '}
+        <code>clear_audio_capture</code>, <code>start_video_recording</code>,{' '}
+        <code>stop_video_recording</code>
+      </td>
+    </tr>
+    <tr>
+      <td>Source-level debugging</td>
+      <td><code>load_debug_info</code>, <code>debug_symbol</code></td>
+    </tr>
     </tbody>
   </table>
 
@@ -300,6 +300,98 @@ const machineCount = fleet.length;
 
   <pre tabindex="0"><code>echo '[&lbrace;"action":"tell_me_the_steps"&rbrace;]' &gt; probe.json
 ./emu198x-spectrum --script probe.json</code></pre>
+
+  <h2>Getting real software to load</h2>
+
+  <p>
+    Inserting a tape or a disk is one step. Persuading the machine to read it
+    is the machine's own ritual, and it differs on every one of them. These
+    were each worked out by loading commercial software and watching what
+    happened, so they are what worked rather than what ought to.
+  </p>
+
+  <table>
+      <caption>What each machine needs after <code>load_media</code></caption>
+      <thead>
+        <tr><th>Machine</th><th>The ritual</th><th>The part that catches people</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>ZX Spectrum</td>
+          <td><code>autoload_tape</code> on <code>tape-1</code></td>
+          <td>The only machine with no <code>--screenshot</code> flag, so its
+              captures go through a <code>save_screenshot</code> step.</td>
+        </tr>
+        <tr>
+          <td>Commodore 64</td>
+          <td><code>--disk</code> and <code>--autoload-disk</code>, then{' '}
+              <code>type_string "RUN\n"</code></td>
+          <td>Wait for <code>drive8.motor_on</code> to go true and then false.
+              A fixed frame count is unusable — a real 1541 load runs anywhere
+              from 5,000 to 15,000 frames depending on the title.</td>
+        </tr>
+        <tr>
+          <td>Amiga</td>
+          <td><code>--disk</code>; it boots itself</td>
+          <td>Budget about 1,500 frames before anything appears. A blank frame
+              at 300 is a machine still booting, not a broken one.</td>
+        </tr>
+        <tr>
+          <td>BBC Micro</td>
+          <td><code>*TAPE</code>, then <code>CHAIN""</code></td>
+          <td><code>--sideways 12=basic.rom</code> is required. The runtime
+              installs only the MOS, so without it there is no BASIC and
+              therefore no <code>CHAIN</code> to type.</td>
+        </tr>
+        <tr>
+          <td>Acorn Electron</td>
+          <td><code>CHAIN""</code></td>
+          <td>Type the quotes as <code>press_keys ["shift", "2"]</code>.{' '}
+              <code>type_string</code> drops a <code>"</code> without saying
+              so, and reports it as typed.</td>
+        </tr>
+        <tr>
+          <td>Acorn Atom</td>
+          <td><code>*LOAD"NAME"</code>, then <code>load_media</code>, then a
+              bare <code>return</code></td>
+          <td>The COS prints <code>PLAY TAPE</code> and waits for a keypress —
+              that <code>return</code> is the whole trick. The name has to be
+              read out of the UEF; an empty one is refused.</td>
+        </tr>
+        <tr>
+          <td>Dragon 32</td>
+          <td><code>CLOADM</code> then <code>EXEC</code>, or{' '}
+              <code>CLOAD</code> then <code>RUN</code></td>
+          <td>Which pair depends on whether the tape holds machine code or
+              BASIC. The wrong one gives <code>?FM ERROR</code>.</td>
+        </tr>
+        <tr>
+          <td>ZX81</td>
+          <td><code>LOAD ""</code>, then <code>media_transport</code>, then{' '}
+              <code>R</code> to run</td>
+          <td>Two traps. Keys need <code>hold_frames: 20</code> — the default
+              is dropped by the keyboard scan. And{' '}
+              <code>--ram-bytes 16384</code>, or every 16K title fails looking
+              exactly like a bad tape.</td>
+        </tr>
+        <tr>
+          <td>Amstrad CPC</td>
+          <td><code>RUN"</code>, then <code>return</code> at the prompt</td>
+          <td>Same quote problem as the Electron. Tapes are{' '}
+              <code>.cdt</code> only; a <code>.wav</code> is refused.</td>
+        </tr>
+    </tbody>
+  </table>
+
+  <p>
+    Two things worth knowing before you spend an afternoon on a machine that
+    is behaving strangely. <code>media_transport</code> works on the Spectrum
+    and is refused by the BBC, Electron and Dragon, so on those three the deck
+    free-runs and a script cannot stop or rewind it. And a tape that appears to
+    stall may only be slow: re-run at a much higher frame budget before
+    concluding anything, because a load in progress and a machine that has hung
+    look identical from outside.
+  </p>
 
   <h2>What you need that we cannot give you</h2>
 
