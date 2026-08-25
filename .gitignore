@@ -6,3 +6,6 @@ src/content/docs/
 
 # Shared components, fetched at build time — never vendored.
 _198x-ui/
+
+# Synced house prose style, fetched by `vale sync` (see .vale.ini).
+.vale/
