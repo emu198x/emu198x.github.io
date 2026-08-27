@@ -23,10 +23,20 @@
   /* The accent that is readable on the current theme's ground. The kit
    * swaps it; this site used to carry its own copy of that swap. */
   --accent-strong: var(--h-accent-ink);
-  /* 9%, not 12%: on the §3b-tinted dark ground a 12% chip composited to
-   * #312b2d, where --h-accent-ink measures 4.46:1. A weaker mix sits closer to
-   * the page and the accent clears. */
-  --accent-soft: color-mix(in oklab, var(--h-accent) 9%, var(--h-page));
+  /* The chip is mixed into --h-page, which the §3b tint brightens by 20% of
+   * the project colour. Its lightness -- and so the contrast --h-accent-ink
+   * has against it -- moves whenever that project colour changes, and the mix
+   * has to come down to compensate. It has been 12% (chip #312b2d, 4.46:1)
+   * and 9% (#2e2e34, 4.34:1 once the palette brightened at v0.5.0).
+   *
+   * 5% is not the smallest value that clears AA. It is the value that puts the
+   * ratio back where it was before the palette moved (4.65:1 at v0.3.1), so
+   * there is headroom for the next change rather than a number sitting on the
+   * floor. The ceiling here is low: even a 0% chip only reaches 4.93:1,
+   * because the tinted page is itself close to the accent in lightness. If a
+   * future palette change cannot clear AA at any mix, the accent text colour
+   * has to move, not this. */
+  --accent-soft: color-mix(in oklab, var(--h-accent) 5%, var(--h-page));
   --signal: var(--h-accent-ink);
   --code-bg: var(--h-code-bg);
   --code-ink: var(--h-code-ink);
