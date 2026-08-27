@@ -9,3 +9,5 @@ _198x-ui/
 
 # Synced house prose style, fetched by `vale sync` (see .vale.ini).
 .vale/
+# Copied out of the kit by scripts/fetch-ui.sh.
+public/fonts/

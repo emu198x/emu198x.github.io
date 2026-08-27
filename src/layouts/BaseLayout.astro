@@ -2,6 +2,7 @@
 import SiteFooter from '@components/SiteFooter.astro';
 import SiteHeader from '@components/SiteHeader.astro';
 import '@198x-ui/tokens.css';
+import '@198x-ui/fonts.css';
 import '../styles/global.css';
 
 interface Props {
@@ -27,12 +28,6 @@ const pageTitle = title === 'Emu198x' ? title : `${title} - Emu198x`;
     <meta name="description" content={description} />
     <title>{pageTitle}</title>
     <link rel="sitemap" href="/sitemap-index.xml" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Archivo:ital,wght@0,400;0,500;0,600;0,700;0,900;1,400&family=Literata:ital,opsz,wght@0,7..72,400;0,7..72,600;1,7..72,400&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
-    />
   </head>
   <body>
     <SiteHeader />
