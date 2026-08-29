@@ -12,6 +12,7 @@ import {
   buildMatrix,
   checksumsUrl,
   readLatestVersion,
+  readReleaseManifest,
   releaseUrl,
 } from '../src/lib/releases.js';
 
@@ -37,6 +38,12 @@ const ATOM = {
   label: 'system:atom',
   milestone: 'Acorn Atom 100%',
 };
+
+function releaseAssets(...machines) {
+  return new Set(
+    machines.flatMap((machine) => TARGETS.map((target) => assetName(machine.crate, target))),
+  );
+}
 
 test('reads the released version from the changelog', () => {
   const root = changelog('# Changelog\n\nBlurb.\n\n## [0.5.0] - 2026-08-19\n\n### Added\n');
@@ -123,8 +130,47 @@ test('download URLs carry the version tag', () => {
   assert.equal(releaseUrl('0.5.0'), 'https://github.com/emu198x/emu198x/releases/tag/v0.5.0');
 });
 
-test('the matrix gives every machine every target', () => {
-  const matrix = buildMatrix({ machines: [SPECTRUM, ATOM], version: '0.5.0' });
+test('reads the artifacts from the tagged release manifest', async () => {
+  const assets = await readReleaseManifest('0.5.0', async (url) => {
+    assert.equal(
+      url,
+      'https://github.com/emu198x/emu198x/releases/download/v0.5.0/dist-manifest.json',
+    );
+    return {
+      ok: true,
+      async json() {
+        return {
+          announcement_tag: 'v0.5.0',
+          releases: [{ artifacts: ['one.tar.xz'] }, { artifacts: ['two.zip'] }],
+        };
+      },
+    };
+  });
+  assert.deepEqual([...assets], ['one.tar.xz', 'two.zip']);
+});
+
+test('an unavailable or mismatched release manifest fails the build', async () => {
+  await assert.rejects(
+    readReleaseManifest('0.5.0', async () => ({ ok: false, status: 404 })),
+    /returned 404/,
+  );
+  await assert.rejects(
+    readReleaseManifest('0.5.0', async () => ({
+      ok: true,
+      async json() {
+        return { announcement_tag: 'v0.4.0', releases: [] };
+      },
+    })),
+    /not the cargo-dist manifest/,
+  );
+});
+
+test('the matrix gives every machine every artifact the release contains', () => {
+  const matrix = buildMatrix({
+    machines: [SPECTRUM, ATOM],
+    version: '0.5.0',
+    releaseAssets: releaseAssets(SPECTRUM, ATOM),
+  });
   assert.equal(matrix.length, 2);
   for (const machine of matrix) {
     assert.equal(machine.builds.length, 4);
@@ -136,8 +182,24 @@ test('the matrix gives every machine every target', () => {
   assert.equal(archiveCount(matrix), 8);
 });
 
+test('the matrix omits an artifact the release did not publish', () => {
+  const assets = releaseAssets(SPECTRUM);
+  assets.delete(assetName(SPECTRUM.crate, TARGETS[2]));
+  const [spectrum] = buildMatrix({
+    machines: [SPECTRUM],
+    version: '0.5.0',
+    releaseAssets: assets,
+  });
+  assert.equal(spectrum.builds.length, 3);
+  assert.ok(spectrum.builds.every((build) => assets.has(build.file)));
+});
+
 test('the matrix keeps the registry fields it was handed', () => {
-  const [spectrum] = buildMatrix({ machines: [SPECTRUM], version: '0.5.0' });
+  const [spectrum] = buildMatrix({
+    machines: [SPECTRUM],
+    version: '0.5.0',
+    releaseAssets: releaseAssets(SPECTRUM),
+  });
   assert.equal(spectrum.machineId, 'sinclair-zx-spectrum');
   assert.equal(spectrum.crate, 'emu198x-spectrum');
   assert.equal(spectrum.milestone, 'ZX Spectrum 100%');
@@ -151,7 +213,11 @@ test('one checksum file covers the whole release', () => {
 });
 
 test('the matrix keeps the registry order it was handed', () => {
-  const matrix = buildMatrix({ machines: [ATOM, SPECTRUM], version: '0.5.0' });
+  const matrix = buildMatrix({
+    machines: [ATOM, SPECTRUM],
+    version: '0.5.0',
+    releaseAssets: releaseAssets(ATOM, SPECTRUM),
+  });
   assert.deepEqual(
     matrix.map((machine) => machine.machineId),
     ['acorn-atom', 'sinclair-zx-spectrum'],
@@ -159,13 +225,14 @@ test('the matrix keeps the registry order it was handed', () => {
 });
 
 test('an unreleased version string fails rather than linking nowhere', () => {
-  assert.throws(() => buildMatrix({ machines: [SPECTRUM], version: 'latest' }), /not a released version/);
-  assert.throws(() => buildMatrix({ machines: [SPECTRUM], version: 'v0.5.0' }), /not a released version/);
-  assert.throws(() => buildMatrix({ machines: [SPECTRUM], version: undefined }), /not a released version/);
+  const assets = releaseAssets(SPECTRUM);
+  assert.throws(() => buildMatrix({ machines: [SPECTRUM], version: 'latest', releaseAssets: assets }), /not a released version/);
+  assert.throws(() => buildMatrix({ machines: [SPECTRUM], version: 'v0.5.0', releaseAssets: assets }), /not a released version/);
+  assert.throws(() => buildMatrix({ machines: [SPECTRUM], version: undefined, releaseAssets: assets }), /not a released version/);
 });
 
 test('an empty registry fails rather than rendering a page with no downloads', () => {
-  assert.throws(() => buildMatrix({ machines: [], version: '0.5.0' }), /no machines/);
+  assert.throws(() => buildMatrix({ machines: [], version: '0.5.0', releaseAssets: new Set() }), /no machines/);
 });
 
 test('the live registry produces the shape the v0.5.0 release published', async () => {
@@ -174,7 +241,11 @@ test('the live registry produces the shape the v0.5.0 release published', async 
   // It reads the flagship checkout the rest of the build already needs.
   const { loadSiteData } = await import('../src/lib/site-data.js');
   const { fleet, sourceRoot } = loadSiteData();
-  const matrix = buildMatrix({ machines: fleet, version: readLatestVersion(sourceRoot) });
+  const matrix = buildMatrix({
+    machines: fleet,
+    version: readLatestVersion(sourceRoot),
+    releaseAssets: releaseAssets(...fleet),
+  });
 
   assert.equal(archiveCount(matrix), matrix.length * 4);
 
@@ -199,6 +270,7 @@ test('the downloads page derives its machines and its version', () => {
   assert.match(source, /loadSiteData\(\)/);
   assert.match(source, /buildMatrix/);
   assert.match(source, /readLatestVersion/);
+  assert.match(source, /readReleaseManifest/);
   assert.match(source, /\.builds\.map\(/);
 });
 

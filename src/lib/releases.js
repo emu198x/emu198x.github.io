@@ -123,6 +123,29 @@ export function releaseUrl(version) {
   return `https://github.com/${REPO}/releases/tag/v${version}`;
 }
 
+/** The cargo-dist manifest that names the artifacts the release published. */
+export async function readReleaseManifest(version, fetchImpl = fetch) {
+  if (!SEMVER.test(String(version))) {
+    throw new Error(`releases: "${version}" is not a released version number`);
+  }
+  const url = assetUrl(version, 'dist-manifest.json');
+  const response = await fetchImpl(url);
+  if (!response.ok) {
+    throw new Error(
+      `releases: ${url} returned ${response.status}; the changelog names a release that is not available`,
+    );
+  }
+  const manifest = await response.json();
+  if (manifest?.announcement_tag !== `v${version}` || !Array.isArray(manifest?.releases)) {
+    throw new Error(`releases: ${url} is not the cargo-dist manifest for v${version}`);
+  }
+  return new Set(
+    manifest.releases
+      .flatMap((release) => release?.artifacts ?? [])
+      .filter((name) => typeof name === 'string' && name.length > 0),
+  );
+}
+
 /**
  * The one checksum file that covers the whole release.
  *
@@ -141,7 +164,7 @@ export function checksumsUrl(version) {
  * reorders and marks what it finds, and someone fetching a build for another
  * machine still has every archive in front of them.
  */
-export function buildMatrix({ machines, version }) {
+export function buildMatrix({ machines, version, releaseAssets }) {
   if (!SEMVER.test(String(version))) {
     throw new Error(`releases: "${version}" is not a released version number`);
   }
@@ -149,11 +172,15 @@ export function buildMatrix({ machines, version }) {
     throw new Error('releases: the registry handed the download matrix no machines');
   }
 
+  if (!(releaseAssets instanceof Set)) {
+    throw new Error('releases: no release manifest was supplied for the download matrix');
+  }
+
   return machines.map((machine) => ({
     ...machine,
-    builds: TARGETS.map((target) => {
+    builds: TARGETS.flatMap((target) => {
       const file = assetName(machine.crate, target);
-      return { target, file, url: assetUrl(version, file) };
+      return releaseAssets.has(file) ? [{ target, file, url: assetUrl(version, file) }] : [];
     }),
   }));
 }

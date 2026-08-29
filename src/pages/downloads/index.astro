@@ -8,6 +8,7 @@ import {
   buildMatrix,
   checksumsUrl,
   readLatestVersion,
+  readReleaseManifest,
   releaseUrl,
 } from '@lib/releases.js';
 
@@ -18,6 +19,7 @@ import {
 // upstream appears in this list on the next build.
 const { fleet, sourceRoot } = loadSiteData();
 const version = readLatestVersion(sourceRoot);
+const releaseAssets = await readReleaseManifest(version);
 
 // The human name lives on the machine's boot capture, so the name a reader
 // sees here is the name /systems/ shows on the same machine's card. A machine
@@ -26,6 +28,7 @@ const version = readLatestVersion(sourceRoot);
 const matrix = buildMatrix({
   machines: fleet.map((entry) => ({ ...entry, name: bootCapture(entry)?.name ?? entry.machineId })),
   version,
+  releaseAssets,
 });
 
 // Counted from the matrix that was just built, never typed beside it.
@@ -63,7 +66,7 @@ const exampleDir = exampleArchive.replace(/\.tar\.xz$/, '');
     <section class="stat-grid" aria-label="What this release contains">
       <div class="stat"><strong>{version}</strong><span>current release</span></div>
       <div class="stat"><strong>{machineCount}</strong><span>machines</span></div>
-      <div class="stat"><strong>{targetCount}</strong><span>targets each</span></div>
+      <div class="stat"><strong>{targetCount}</strong><span>desktop targets</span></div>
       <div class="stat"><strong>{archives}</strong><span>archives in all</span></div>
     </section>
 
