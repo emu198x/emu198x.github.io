@@ -77,12 +77,28 @@ test('the four release targets are listed, Apple silicon before Intel', () => {
   );
 });
 
-test('Windows ships a zip and the other three ship tar.xz', () => {
+test('Windows ships a zip and the other three ship tar.gz', () => {
   const byId = Object.fromEntries(TARGETS.map((target) => [target.id, target.ext]));
   assert.equal(byId['x86_64-pc-windows-msvc'], 'zip');
-  assert.equal(byId['aarch64-apple-darwin'], 'tar.xz');
-  assert.equal(byId['x86_64-apple-darwin'], 'tar.xz');
-  assert.equal(byId['x86_64-unknown-linux-gnu'], 'tar.xz');
+  assert.equal(byId['aarch64-apple-darwin'], 'tar.gz');
+  assert.equal(byId['x86_64-apple-darwin'], 'tar.gz');
+  assert.equal(byId['x86_64-unknown-linux-gnu'], 'tar.gz');
+});
+
+test('an older release that shipped tar.gz still resolves through its manifest', () => {
+  // Releases up to v0.22.2 published .tar.gz on Unix targets. A page built
+  // against one of them must link the archive that exists, not the current
+  // default.
+  const appleSilicon = TARGETS.find((target) => target.id === 'aarch64-apple-darwin');
+  const assets = new Set(['emu198x-spectrum-aarch64-apple-darwin.tar.xz']);
+  assert.equal(
+    assetName('emu198x-spectrum', appleSilicon, assets),
+    'emu198x-spectrum-aarch64-apple-darwin.tar.xz',
+  );
+  assert.equal(
+    assetName('emu198x-spectrum', appleSilicon, new Set()),
+    'emu198x-spectrum-aarch64-apple-darwin.tar.gz',
+  );
 });
 
 test('exactly one target per operating system, except macOS which has two', () => {
@@ -100,7 +116,7 @@ test('an asset name is the crate, the target triple and the extension', () => {
   const [appleSilicon, , windows] = TARGETS;
   assert.equal(
     assetName('emu198x-spectrum', appleSilicon),
-    'emu198x-spectrum-aarch64-apple-darwin.tar.xz',
+    'emu198x-spectrum-aarch64-apple-darwin.tar.gz',
   );
   assert.equal(
     assetName('emu198x-spectrum', windows),
@@ -124,8 +140,8 @@ test('a machine with no crate fails rather than building a broken name', () => {
 
 test('download URLs carry the version tag', () => {
   assert.equal(
-    assetUrl('0.5.0', 'emu198x-c64-x86_64-unknown-linux-gnu.tar.xz'),
-    'https://github.com/emu198x/emu198x/releases/download/v0.5.0/emu198x-c64-x86_64-unknown-linux-gnu.tar.xz',
+    assetUrl('0.5.0', 'emu198x-c64-x86_64-unknown-linux-gnu.tar.gz'),
+    'https://github.com/emu198x/emu198x/releases/download/v0.5.0/emu198x-c64-x86_64-unknown-linux-gnu.tar.gz',
   );
   assert.equal(releaseUrl('0.5.0'), 'https://github.com/emu198x/emu198x/releases/tag/v0.5.0');
 });
@@ -141,12 +157,12 @@ test('reads the artifacts from the tagged release manifest', async () => {
       async json() {
         return {
           announcement_tag: 'v0.5.0',
-          releases: [{ artifacts: ['one.tar.xz'] }, { artifacts: ['two.zip'] }],
+          releases: [{ artifacts: ['one.tar.gz'] }, { artifacts: ['two.zip'] }],
         };
       },
     };
   });
-  assert.deepEqual([...assets], ['one.tar.xz', 'two.zip']);
+  assert.deepEqual([...assets], ['one.tar.gz', 'two.zip']);
 });
 
 test('an unavailable or mismatched release manifest fails the build', async () => {
@@ -254,7 +270,7 @@ test('the live registry produces the shape the v0.5.0 release published', async 
     for (const build of machine.builds) {
       assert.match(
         build.file,
-        /^emu198x-[a-z0-9-]+-(aarch64-apple-darwin|x86_64-apple-darwin|x86_64-pc-windows-msvc|x86_64-unknown-linux-gnu)\.(tar\.xz|zip)$/,
+        /^emu198x-[a-z0-9-]+-(aarch64-apple-darwin|x86_64-apple-darwin|x86_64-pc-windows-msvc|x86_64-unknown-linux-gnu)\.(tar\.gz|tar\.xz|zip)$/,
       );
       assert.ok(!names.has(build.file), `two machines claim ${build.file}`);
       names.add(build.file);

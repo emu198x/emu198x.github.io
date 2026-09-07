@@ -45,7 +45,7 @@ export const TARGETS = [
     osLabel: 'macOS',
     archLabel: 'Apple silicon',
     hint: 'M1 and later',
-    ext: 'tar.xz',
+    ext: 'tar.gz',
   },
   {
     id: 'x86_64-apple-darwin',
@@ -54,7 +54,7 @@ export const TARGETS = [
     osLabel: 'macOS',
     archLabel: 'Intel',
     hint: 'Macs before Apple silicon',
-    ext: 'tar.xz',
+    ext: 'tar.gz',
   },
   {
     id: 'x86_64-pc-windows-msvc',
@@ -72,7 +72,7 @@ export const TARGETS = [
     osLabel: 'Linux',
     archLabel: 'x86-64',
     hint: 'glibc, 64-bit',
-    ext: 'tar.xz',
+    ext: 'tar.gz',
   },
 ];
 
@@ -107,10 +107,31 @@ export function readLatestVersion(sourceRoot) {
   return match[1];
 }
 
-/** The archive a machine's crate ships as, on one target. */
-export function assetName(crate, target) {
+/**
+ * Every archive extension cargo-dist can emit. Releases up to v0.22.2 shipped
+ * `.tar.xz` on Unix targets; later ones ship `.tar.gz`, which packages in a
+ * fraction of the time. Listed longest-first so `tar.gz` is tried as a whole
+ * rather than matching a bare `gz`.
+ */
+export const ARCHIVE_EXTENSIONS = ['tar.zst', 'tar.gz', 'tar.xz', 'zip'];
+
+/**
+ * The archive a machine's crate ships as, on one target.
+ *
+ * With a release manifest to hand, the name is whichever archive that release
+ * actually published for the crate and target, so a page built against an
+ * older release keeps its links when the format changes. Without one, the
+ * target's current default extension.
+ */
+export function assetName(crate, target, releaseAssets) {
   if (typeof crate !== 'string' || crate.length === 0) {
     throw new Error('releases: a machine reached the download matrix with no crate name');
+  }
+  if (releaseAssets instanceof Set) {
+    for (const ext of ARCHIVE_EXTENSIONS) {
+      const name = `${crate}-${target.id}.${ext}`;
+      if (releaseAssets.has(name)) return name;
+    }
   }
   return `${crate}-${target.id}.${target.ext}`;
 }
@@ -179,7 +200,7 @@ export function buildMatrix({ machines, version, releaseAssets }) {
   return machines.map((machine) => ({
     ...machine,
     builds: TARGETS.flatMap((target) => {
-      const file = assetName(machine.crate, target);
+      const file = assetName(machine.crate, target, releaseAssets);
       return releaseAssets.has(file) ? [{ target, file, url: assetUrl(version, file) }] : [];
     }),
   }));
