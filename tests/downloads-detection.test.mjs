@@ -222,10 +222,10 @@ function element(tag, attributes, children = []) {
 
 const MACHINES = ['emu198x-spectrum', 'emu198x-c64', 'emu198x-amiga'];
 const BUILDS = [
-  { os: 'macos', arch: 'arm64', target: 'aarch64-apple-darwin', ext: 'tar.xz' },
-  { os: 'macos', arch: 'x64', target: 'x86_64-apple-darwin', ext: 'tar.xz' },
+  { os: 'macos', arch: 'arm64', target: 'aarch64-apple-darwin', ext: 'tar.gz' },
+  { os: 'macos', arch: 'x64', target: 'x86_64-apple-darwin', ext: 'tar.gz' },
   { os: 'windows', arch: 'x64', target: 'x86_64-pc-windows-msvc', ext: 'zip' },
-  { os: 'linux', arch: 'x64', target: 'x86_64-unknown-linux-gnu', ext: 'tar.xz' },
+  { os: 'linux', arch: 'x64', target: 'x86_64-unknown-linux-gnu', ext: 'tar.gz' },
 ];
 
 function buildDocument() {
