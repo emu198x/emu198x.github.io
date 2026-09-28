@@ -9,6 +9,7 @@
 /docs/scripting/
 /docs/status/current-system-usability/
 /downloads/
+/emulators/
 /systems/
 /systems/acorn-atom/
 /systems/acorn-bbc-micro/
