@@ -5,10 +5,10 @@
   "version": "0.0.1",
   "scripts": {
     "ui:fetch": "./scripts/fetch-ui.sh",
-    "predev": "npm run ui:fetch",
+    "predev": "npm run ui:fetch && node scripts/check-browser-player.mjs",
     "dev": "node scripts/sync-public-docs.mjs && astro dev",
-    "prebuild": "npm run ui:fetch",
-    "build": "node scripts/sync-public-docs.mjs && astro build && node scripts/check-routes.mjs && node scripts/check-source-spacing.mjs && node scripts/check-rendered-spacing.mjs && node scripts/check-internal-links.mjs && node scripts/check-prose.mjs && npx pagefind --site dist",
+    "prebuild": "npm run ui:fetch && node scripts/check-browser-player.mjs",
+    "build": "node scripts/sync-public-docs.mjs && astro build && node scripts/check-browser-player.mjs --built && node scripts/check-routes.mjs && node scripts/check-source-spacing.mjs && node scripts/check-rendered-spacing.mjs && node scripts/check-internal-links.mjs && node scripts/check-prose.mjs && npx pagefind --site dist",
     "check:spacing": "node scripts/check-source-spacing.mjs && node scripts/check-rendered-spacing.mjs",
     "check:links": "node scripts/check-internal-links.mjs",
     "check:routes": "node scripts/check-routes.mjs",
@@ -17,7 +17,8 @@
     "sync": "node scripts/sync-public-docs.mjs",
     "a11y": "node scripts/a11y-sweep.mjs",
     "test": "node --test 'tests/**/*.test.mjs'",
-    "prose": "node scripts/check-prose.mjs"
+    "prose": "node scripts/check-prose.mjs",
+    "build:player": "node scripts/build-browser-player.mjs"
   },
   "dependencies": {
     "@astrojs/markdown-remark": "^7.0.0",

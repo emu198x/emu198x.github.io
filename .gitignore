@@ -11,3 +11,6 @@ _198x-ui/
 .vale/
 # Copied out of the kit by scripts/fetch-ui.sh.
 public/fonts/
+
+# Firmware-free browser player, built from the Emu198x checkout.
+public/emulators/

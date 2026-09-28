@@ -6,6 +6,7 @@
  * vocabulary and the registry's are the same string. This is the one place to
  * stop a fifth naming vocabulary spreading into URLs.
  */
+import BrowserPlayer from '../../components/BrowserPlayer.astro';
 import BaseLayout from '@layouts/BaseLayout.astro';
 import { loadSiteData } from '@lib/site-data.js';
 import { bootCapture, softwareCapture, isCaptured } from '@lib/fleet.js';
@@ -46,6 +47,8 @@ const software = softwareCapture(entry);
     <p class="eyebrow">System</p>
     <h1>{entry.machineId}</h1>
     <p class="lede">Ships from <code>{entry.crate}</code>.</p>
+
+    <BrowserPlayer system={entry.machineId} />
 
     {captured ? (
       <figure class="capture-figure">
