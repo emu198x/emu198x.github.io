@@ -37,7 +37,7 @@ const targetCount = TARGETS.length;
 const archives = archiveCount(matrix);
 const example = matrix.find((machine) => machine.crate === 'emu198x-spectrum') ?? matrix[0];
 const exampleArchive = example.builds[0].file;
-const exampleDir = exampleArchive.replace(/\.tar\.xz$/, '');
+const exampleDir = exampleArchive.replace(/\.(?:tar\.(?:gz|xz|zst)|zip)$/, '');
 ---
 
 <BaseLayout
@@ -50,9 +50,9 @@ const exampleDir = exampleArchive.replace(/\.tar\.xz$/, '');
 
     <section class="intro">
       <p class="lede">
-        Emu198x ships one binary per machine. Pick the machine you want, take
-        the archive for your operating system, unpack it, and run the binary
-        inside.
+        Emu198x ships one binary per machine. Install the machines you want
+        with Homebrew on macOS or Linux, or download an archive for macOS,
+        Linux or Windows.
       </p>
       <div class="actions" data-pagefind-ignore>
         <a class="button primary" href={releaseUrl(version)}>Release {version} notes</a>{' '}
@@ -68,6 +68,22 @@ const exampleDir = exampleArchive.replace(/\.tar\.xz$/, '');
       <div class="stat"><strong>{machineCount}</strong><span>machines</span></div>
       <div class="stat"><strong>{targetCount}</strong><span>desktop targets</span></div>
       <div class="stat"><strong>{archives}</strong><span>archives in all</span></div>
+    </section>
+
+    <section aria-labelledby="homebrew-heading">
+      <h2 id="homebrew-heading">Install with Homebrew</h2>
+      <p>
+        If you use <a href="https://brew.sh/">Homebrew</a>, install each machine
+        separately. The tap covers macOS on Apple silicon and Intel, and Linux
+        on ARM64 and x86-64. Homebrew chooses the matching binary.
+      </p>
+      <pre tabindex="0"><code>brew install emu198x/tap/emu198x-spectrum
+emu198x-spectrum --help</code></pre>
+      <p>
+        Every machine below has its own install command. Firmware and games
+        are separate; the <a href="/docs/getting-started/">getting started guide</a>{' '}
+        explains what to provide.
+      </p>
     </section>
 
     <section aria-labelledby="matrix-heading">
@@ -88,7 +104,7 @@ const exampleDir = exampleArchive.replace(/\.tar\.xz$/, '');
           always tell the two apart — Safari names an Intel processor on every
           Mac, including Apple silicon — so both stay listed and neither is
           marked unless your browser reports the architecture outright.
-          Windows and Linux have one build each. Nothing here is ever hidden:
+          Linux also has two builds: ARM64 and x86-64. Windows has an x86-64 build. Nothing here is ever hidden:
           if you are fetching an archive for a different machine, it is on
           this page.
         </p>
@@ -101,6 +117,7 @@ const exampleDir = exampleArchive.replace(/\.tar\.xz$/, '');
               <h3><a href={`/systems/${machine.machineId}/`}>{machine.name}</a></h3>
               <p class="crate"><code>{machine.crate}</code></p>
             </div>
+            <pre class="brew-command" tabindex="0"><code>brew install emu198x/tap/{machine.crate}</code></pre>
             <ul class="builds" data-builds>
               {machine.builds.map((build) => (
                 <li class="build" data-os={build.target.os} data-arch={build.target.arch}>
@@ -195,7 +212,7 @@ cargo run --release -p emu198x-nes -- \
    * Every archive is already in the HTML before this runs, and this script
    * moves list items that are there and unhides a label that is there. It
    * removes nothing, so a reader whose platform is detected wrongly — or not
-   * at all — still has all 120 archives in front of them.
+   * at all — still has all archives in front of them.
    *
    * The architecture question is the one that cannot be answered from the
    * user-agent string. Safari reports `Intel Mac OS X` on Apple silicon, so
@@ -210,7 +227,11 @@ cargo run --release -p emu198x-nes -- \
     windows:
       'Your browser reports Windows, so the Windows build is listed first for each machine. Every other build is still here.',
     linux:
-      'Your browser reports Linux, so the Linux build is listed first for each machine. Every other build is still here.',
+      'Your browser reports Linux but not a 64-bit processor type, so both Linux builds are listed first. Choose ARM64 or x86-64 to match your system.',
+    'linux-arm64':
+      'Your browser reports 64-bit ARM Linux, so the ARM64 build is marked for each machine. Every other build is still here.',
+    'linux-x64':
+      'Your browser reports 64-bit x86 Linux, so the x86-64 build is marked for each machine. Every other build is still here.',
     'macos-arm64':
       'Your browser reports macOS on Apple silicon, so that build is marked for each machine. The Intel build is listed beside it, and every other build is still here.',
     macos:
@@ -242,14 +263,18 @@ cargo run --release -p emu198x-nes -- \
     const os = osFromClientHints(data) ?? osFromUserAgent(navigator.userAgent);
     let arch: string | null = null;
 
-    // Only `arm` preselects. A Chromium running under Rosetta on Apple
+    // On macOS, only `arm` preselects. A Chromium running under Rosetta on Apple
     // silicon reports `x86`, so treating x86 as proof of an Intel Mac would
     // send those readers to the slower build with a confident label on it.
     // An unmarked pair is the honest answer where the answer is unknown.
-    if (os === 'macos' && typeof data?.getHighEntropyValues === 'function') {
+    if ((os === 'macos' || os === 'linux') && typeof data?.getHighEntropyValues === 'function') {
       try {
-        const values = await data.getHighEntropyValues(['architecture']);
-        if (values?.architecture === 'arm') arch = 'arm64';
+        const values = await data.getHighEntropyValues(['architecture', 'bitness']);
+        if (os === 'macos' && values?.architecture === 'arm') arch = 'arm64';
+        if (os === 'linux' && values?.bitness === '64') {
+          if (values.architecture === 'arm') arch = 'arm64';
+          if (values.architecture === 'x86') arch = 'x64';
+        }
       } catch {
         arch = null;
       }
@@ -275,8 +300,7 @@ cargo run --release -p emu198x-nes -- \
 
       // One build for this operating system means detecting the system
       // resolved it. Two means the architecture has to say so — and on macOS
-      // only `arm` does. Asking the list rather than assuming Windows and
-      // Linux have one build each keeps that true if the release grows one.
+      // only `arm` does. Linux requires an explicitly 64-bit architecture.
       const chosen =
         mine.length === 1 ? mine[0] : mine.find((item) => item.dataset.arch === arch) ?? null;
       if (!chosen) continue;
@@ -290,6 +314,11 @@ cargo run --release -p emu198x-nes -- \
 </script>
 
 <style>
+  .brew-command {
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+  }
+
   .downloads {
     padding-block: 4rem;
   }

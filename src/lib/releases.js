@@ -25,7 +25,7 @@ import { join } from 'node:path';
 export const REPO = 'emu198x/emu198x';
 
 /**
- * The four targets the release builds, in the order the page lists them.
+ * The five targets the release builds, in the order the page lists them.
  *
  * Apple silicon leads macOS deliberately. It is the majority Mac in the
  * period this release ships into, and the ordering has to be right in the
@@ -64,6 +64,15 @@ export const TARGETS = [
     archLabel: 'x86-64',
     hint: '64-bit Windows',
     ext: 'zip',
+  },
+  {
+    id: 'aarch64-unknown-linux-gnu',
+    os: 'linux',
+    arch: 'arm64',
+    osLabel: 'Linux',
+    archLabel: 'ARM64',
+    hint: 'glibc, 64-bit ARM',
+    ext: 'tar.gz',
   },
   {
     id: 'x86_64-unknown-linux-gnu',

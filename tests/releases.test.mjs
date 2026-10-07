@@ -65,23 +65,25 @@ test('a changelog with no version heading fails loudly', () => {
   assert.throws(() => readLatestVersion(changelog('# Changelog\n\nNothing yet.\n')), /no "## \[x\.y\.z\]"/);
 });
 
-test('the four release targets are listed, Apple silicon before Intel', () => {
+test('the five release targets are listed, Apple silicon before Intel', () => {
   assert.deepEqual(
     TARGETS.map((target) => target.id),
     [
       'aarch64-apple-darwin',
       'x86_64-apple-darwin',
       'x86_64-pc-windows-msvc',
+      'aarch64-unknown-linux-gnu',
       'x86_64-unknown-linux-gnu',
     ],
   );
 });
 
-test('Windows ships a zip and the other three ship tar.gz', () => {
+test('Windows ships a zip and the other four ship tar.gz', () => {
   const byId = Object.fromEntries(TARGETS.map((target) => [target.id, target.ext]));
   assert.equal(byId['x86_64-pc-windows-msvc'], 'zip');
   assert.equal(byId['aarch64-apple-darwin'], 'tar.gz');
   assert.equal(byId['x86_64-apple-darwin'], 'tar.gz');
+  assert.equal(byId['aarch64-unknown-linux-gnu'], 'tar.gz');
   assert.equal(byId['x86_64-unknown-linux-gnu'], 'tar.gz');
 });
 
@@ -101,7 +103,7 @@ test('an older release that shipped tar.gz still resolves through its manifest',
   );
 });
 
-test('exactly one target per operating system, except macOS which has two', () => {
+test('macOS and Linux offer both architectures; Windows offers x86-64', () => {
   // The whole detection design rests on this shape: one build means detecting
   // the OS resolves it, two means the architecture has to be established or
   // both offered.
@@ -109,7 +111,7 @@ test('exactly one target per operating system, except macOS which has two', () =
   for (const target of TARGETS) counts.set(target.os, (counts.get(target.os) ?? 0) + 1);
   assert.equal(counts.get('macos'), 2);
   assert.equal(counts.get('windows'), 1);
-  assert.equal(counts.get('linux'), 1);
+  assert.equal(counts.get('linux'), 2);
 });
 
 test('an asset name is the crate, the target triple and the extension', () => {
@@ -189,13 +191,13 @@ test('the matrix gives every machine every artifact the release contains', () =>
   });
   assert.equal(matrix.length, 2);
   for (const machine of matrix) {
-    assert.equal(machine.builds.length, 4);
+    assert.equal(machine.builds.length, 5);
     assert.deepEqual(
       machine.builds.map((build) => build.target.id),
       TARGETS.map((target) => target.id),
     );
   }
-  assert.equal(archiveCount(matrix), 8);
+  assert.equal(archiveCount(matrix), 10);
 });
 
 test('the matrix omits an artifact the release did not publish', () => {
@@ -206,7 +208,7 @@ test('the matrix omits an artifact the release did not publish', () => {
     version: '0.5.0',
     releaseAssets: assets,
   });
-  assert.equal(spectrum.builds.length, 3);
+  assert.equal(spectrum.builds.length, 4);
   assert.ok(spectrum.builds.every((build) => assets.has(build.file)));
 });
 
@@ -251,9 +253,8 @@ test('an empty registry fails rather than rendering a page with no downloads', (
   assert.throws(() => buildMatrix({ machines: [], version: '0.5.0', releaseAssets: new Set() }), /no machines/);
 });
 
-test('the live registry produces the shape the v0.5.0 release published', async () => {
-  // A guard on the whole join at once: thirty machines, four targets, and
-  // every generated name matching the shape `gh release view v0.5.0` lists.
+test('the live registry joins every machine to the current target set', async () => {
+  // A guard on the registry-to-archive join and uniqueness across targets.
   // It reads the flagship checkout the rest of the build already needs.
   const { loadSiteData } = await import('../src/lib/site-data.js');
   const { fleet, sourceRoot } = loadSiteData();
@@ -263,14 +264,14 @@ test('the live registry produces the shape the v0.5.0 release published', async 
     releaseAssets: releaseAssets(...fleet),
   });
 
-  assert.equal(archiveCount(matrix), matrix.length * 4);
+  assert.equal(archiveCount(matrix), matrix.length * 5);
 
   const names = new Set();
   for (const machine of matrix) {
     for (const build of machine.builds) {
       assert.match(
         build.file,
-        /^emu198x-[a-z0-9-]+-(aarch64-apple-darwin|x86_64-apple-darwin|x86_64-pc-windows-msvc|x86_64-unknown-linux-gnu)\.(tar\.gz|tar\.xz|zip)$/,
+        /^emu198x-[a-z0-9-]+-(aarch64-apple-darwin|x86_64-apple-darwin|x86_64-pc-windows-msvc|aarch64-unknown-linux-gnu|x86_64-unknown-linux-gnu)\.(tar\.gz|tar\.xz|zip)$/,
       );
       assert.ok(!names.has(build.file), `two machines claim ${build.file}`);
       names.add(build.file);
@@ -338,4 +339,14 @@ test('the /systems/ run-report names the release it was run against', () => {
     !/\{\s*version\s*\}/.test(paragraph),
     'the run-report interpolates the current version into a claim about a past run',
   );
+});
+
+
+test('published Linux ARM64 archives are reachable alongside x86-64', () => {
+  const assets = new Set([
+    'emu198x-spectrum-aarch64-unknown-linux-gnu.tar.gz',
+    'emu198x-spectrum-x86_64-unknown-linux-gnu.tar.gz',
+  ]);
+  const [machine] = buildMatrix({ machines: [SPECTRUM], version: '0.29.0', releaseAssets: assets });
+  assert.deepEqual(new Set(machine.builds.map(build => build.file)), assets);
 });
