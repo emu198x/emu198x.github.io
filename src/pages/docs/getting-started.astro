@@ -21,7 +21,7 @@ const machineCount = fleet.length;
     Emu198x is {machineCount} emulators, one binary per machine. The thing that
     catches people first: there is no <code>emu198x</code> command. You run the
     machine — <code>emu198x-spectrum</code>, <code>emu198x-c64</code>,
-    {' '}<code>emu198x-nes</code> — and each one is its own download.
+    {' '}<code>emu198x-nes</code> — and each one has its own download and Homebrew formula.
   </p>
 
   <h2>One binary is one machine</h2>
@@ -84,7 +84,7 @@ const machineCount = fleet.length;
 
   <p>
     Each release publishes an archive per machine per desktop platform — macOS
-    on Apple Silicon and Intel, Linux x86_64, Windows x86_64. Start at
+    on Apple silicon and Intel, Linux on ARM64 and x86-64, and Windows on x86-64. Start at
     the <a href="/downloads/">downloads page</a>, which links the current
     release. Building from a source checkout gets you the same binaries and
     needs a current stable Rust toolchain.
@@ -97,6 +97,23 @@ const machineCount = fleet.length;
     a boot capture for each machine that has one, and the
     {' '}<a href="/accuracy/">accuracy progress</a> page carries the evidence
     behind it.
+  </p>
+
+  <h2>Install with Homebrew</h2>
+
+  <p>
+    On macOS or Linux, <a href="https://brew.sh/">Homebrew</a> installs the
+    binary for your processor. Install just the machines you want:
+  </p>
+
+  <pre><code>brew install emu198x/tap/emu198x-spectrum
+emu198x-spectrum --rom /path/to/your/48.rom</code></pre>
+
+  <p>
+    The <a href="/downloads/">downloads page</a> lists every machine's
+    Homebrew command and its archives. With Homebrew, run the command by
+    name; with an extracted archive, use <code>./</code> from its folder.
+    On Windows, extract the ZIP and run the <code>.exe</code>.
   </p>
 
   <h2>Running a machine</h2>
@@ -119,7 +136,7 @@ cargo run --release -p emu198x-spectrum -- --rom /path/to/your/48.rom</code></pr
     and let the machine's own ROM loader run:
   </p>
 
-  <pre><code>./emu198x-spectrum --tape /path/to/your/game.tap --autoload-tape</code></pre>
+  <pre tabindex="0"><code>./emu198x-spectrum --rom /path/to/your/48.rom --tape /path/to/your/game.tap --autoload-tape</code></pre>
 
   <p>
     The <code>--autoload-tape</code> flag waits for the boot to finish, types

@@ -225,6 +225,7 @@ const BUILDS = [
   { os: 'macos', arch: 'arm64', target: 'aarch64-apple-darwin', ext: 'tar.gz' },
   { os: 'macos', arch: 'x64', target: 'x86_64-apple-darwin', ext: 'tar.gz' },
   { os: 'windows', arch: 'x64', target: 'x86_64-pc-windows-msvc', ext: 'zip' },
+  { os: 'linux', arch: 'arm64', target: 'aarch64-unknown-linux-gnu', ext: 'tar.gz' },
   { os: 'linux', arch: 'x64', target: 'x86_64-unknown-linux-gnu', ext: 'tar.gz' },
 ];
 
@@ -374,3 +375,40 @@ test('no class the script adds hides anything in the page stylesheet', async () 
     }
   }
 });
+
+for (const [architecture, expected] of [['arm', 'arm64'], ['x86', 'x64']]) {
+  test(`Linux ${expected} is marked without hiding other downloads`, async () => {
+    const { root, before, after } = await runDetection({
+      userAgent: 'Mozilla/5.0 (X11; Linux)',
+      userAgentData: {
+        platform: 'Linux',
+        getHighEntropyValues: async () => ({ architecture, bitness: '64' }),
+      },
+    });
+    assert.deepEqual([...after].sort(), [...before].sort());
+    for (const list of root.querySelectorAll('[data-builds]')) {
+      const matches = [...list.querySelectorAll('.build')].filter(item => item.classList.contains('is-match'));
+      assert.equal(matches.length, 1);
+      assert.equal(matches[0].dataset.os, 'linux');
+      assert.equal(matches[0].dataset.arch, expected);
+    }
+  });
+}
+
+for (const bitness of [undefined, '32']) {
+  test(`Linux with ${bitness ?? 'unknown'} bitness offers both builds without a match`, async () => {
+    const { root, before, after } = await runDetection({
+      userAgent: 'Mozilla/5.0 (X11; Linux)',
+      userAgentData: {
+        platform: 'Linux',
+        getHighEntropyValues: async () => ({ architecture: 'arm', bitness }),
+      },
+    });
+    assert.deepEqual([...after].sort(), [...before].sort());
+    for (const list of root.querySelectorAll('[data-builds]')) {
+      const items = [...list.querySelectorAll('.build')];
+      assert.ok(items.slice(0, 2).every(item => item.dataset.os === 'linux'));
+      assert.ok(items.every(item => !item.classList.contains('is-match')));
+    }
+  });
+}
