@@ -22,7 +22,17 @@ const siteRoot = dirname(fileURLToPath(import.meta.url)).replace(/\/scripts$/, '
 // There is also no local-repo fallback
 // here on purpose: a heuristic that can silently source the changelog from
 // this repo instead of the flagship is worse than failing loudly below.
-const sourceRoot = resolve(process.env.EMU198X_SOURCE_ROOT ?? join(siteRoot, '..', 'emu198x'));
+// scripts/fetch-emu198x.mjs chooses the checkout once and records it in
+// .emu198x-source, which both routes read; EMU198X_SOURCE_ROOT overrides it.
+function recordedSourceRoot() {
+  if (process.env.EMU198X_SOURCE_ROOT) return resolve(process.env.EMU198X_SOURCE_ROOT);
+  const record = join(siteRoot, '.emu198x-source');
+  if (!existsSync(record)) {
+    throw new Error('No Emu198x source recorded: run `npm run source` (or set EMU198X_SOURCE_ROOT).');
+  }
+  return resolve(readFileSync(record, 'utf8').trim());
+}
+const sourceRoot = recordedSourceRoot();
 const destRoot = join(siteRoot, 'src', 'content', 'docs');
 
 // This used to copy five more paths — docs/systems, docs/status/current-

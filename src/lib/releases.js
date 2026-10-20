@@ -102,7 +102,7 @@ export function readLatestVersion(sourceRoot) {
   if (!existsSync(path)) {
     throw new Error(
       `releases: no CHANGELOG.md at ${path}. ` +
-        'Set EMU198X_SOURCE_ROOT to a checkout of emu198x/emu198x.',
+        'Run `npm run source`, or set EMU198X_SOURCE_ROOT to a checkout of emu198x/emu198x.',
     );
   }
 

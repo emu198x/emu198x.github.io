@@ -11,6 +11,9 @@ const siteRoot = resolve(__dirname, '..');
 // emu198x/emu198x. macOS matches "Emu198x" case-insensitively so a
 // capitalised default would look fine here and fail as a missing directory on
 // Linux CI.
+// Captures run the flagship's binaries, so they need a full checkout: set
+// EMU198X_SOURCE_ROOT, or keep ../emu198x as the family layout has it. The
+// sparse clone the site build records holds only docs.
 const sourceRoot = resolve(process.env.EMU198X_SOURCE_ROOT ?? join(siteRoot, '..', 'emu198x'));
 const tempRoot = join(siteRoot, '.tmp', 'boot-screenshot-scripts');
 const bootTargets = captureTargets();
