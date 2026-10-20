@@ -3,6 +3,7 @@
  * it. Checking the contract once and throwing here means a broken registry
  * stops the build before a single page renders.
  */
+import { readFileSync } from 'node:fs';
 import { resolve, join } from 'node:path';
 import { readRegistry } from './registry.js';
 import { readEvidence } from './evidence.js';
@@ -16,8 +17,22 @@ import { bootScreenshots, softwareCaptures, normalizeCaptureTarget } from '../da
 // match while running unbundled (e.g. under the unit tests). process.cwd()
 // is the stable anchor: Astro's build and every scripts/ entry point run
 // with the working directory at the project root.
+//
+// The root itself is chosen once by scripts/fetch-emu198x.mjs and recorded in
+// .emu198x-source; EMU198X_SOURCE_ROOT overrides it. With neither, this
+// throws rather than guessing a path that might not be the flagship.
 export function sourceRoot() {
-  return resolve(process.env.EMU198X_SOURCE_ROOT ?? join(process.cwd(), '..', 'emu198x'));
+  if (process.env.EMU198X_SOURCE_ROOT) return resolve(process.env.EMU198X_SOURCE_ROOT);
+  let recorded;
+  try {
+    recorded = readFileSync(join(process.cwd(), '.emu198x-source'), 'utf8').trim();
+  } catch {
+    recorded = '';
+  }
+  if (!recorded) {
+    throw new Error('No Emu198x source recorded: run `npm run source` (or set EMU198X_SOURCE_ROOT).');
+  }
+  return resolve(recorded);
 }
 
 // The raw records in boot-screenshots.js are terse: most omit rightsNote,

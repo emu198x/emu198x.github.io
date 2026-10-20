@@ -2,12 +2,18 @@
 
 Public website and documentation for Emu198x.
 
-The site is built with Astro. Public Markdown is synchronized from the sibling
-`emu198x` source repo at build time.
+The site is built with Astro. The changelog, the system registry and the
+usability evidence come from the Emu198x flagship at build time.
 
 ```sh
-EMU198X_SOURCE_ROOT=../emu198x npm run build
+npm ci
+npm run build
 ```
+
+`npm run source` (run first by dev, build and test) chooses that checkout and
+records it in `.emu198x-source`: `EMU198X_SOURCE_ROOT` if set, else `../emu198x`
+when it is a checkout of emu198x/emu198x (so local docs edits show up), else a
+sparse clone of Emu198x main in `_emu198x`, which is what CI uses.
 
 ## Browser players
 

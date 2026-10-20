@@ -14,3 +14,7 @@ public/fonts/
 
 # Firmware-free browser player, built from the Emu198x checkout.
 public/emulators/
+
+# The Emu198x checkout the build reads, chosen and recorded by scripts/fetch-emu198x.mjs.
+_emu198x/
+.emu198x-source

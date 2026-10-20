@@ -1,114 +1,41 @@
 name: Pages
 
+# Builds the site and deploys it to GitHub Pages with the workflow every 198x
+# site shares (stevehill1981/198x-workflows). Pull requests build and check
+# without deploying.
+#
+# The build fetches what it needs itself: scripts/fetch-emu198x.mjs takes the
+# flagship's docs and changelog from Emu198x main, and the player is the
+# pinned @emu198x/player package, so nothing here checks out Emu198x or
+# compiles Rust. The daily run picks up documentation changes on main.
 on:
-  # Without this, no pull request ever ran these checks: the tests, the build
-  # and the accessibility sweep only fired once a merge had already landed on
-  # main. A pull request reported "no checks", which reads like nothing needed
-  # checking rather than nothing was checked — the shape this repository's own
-  # "a gate nobody runs is a silent gate" decision exists to reject.
   pull_request:
   push:
     branches:
       - main
-  # The registry and the evidence table live in emu198x/emu198x, so a change
-  # there can break this build with nothing here to fire it. Daily and not
-  # weekly: a week is a long time for a broken fleet list to sit on a public
-  # site, and the contract check is what turns the break into a failure.
   schedule:
     - cron: "0 6 * * *"
   workflow_dispatch:
 
-# Only deploy writes Pages, so only deploy is granted it. Pull requests now
-# run this workflow, and a run triggered by a pull request has no business
-# holding a token that can publish the site.
 permissions:
   contents: read
+  pages: write
+  id-token: write
 
 concurrency:
   group: pages-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build:
-    name: Build Astro site
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    # Job level, not step level. Set on the build step alone, this was missing
-    # from "Run tests", whose registry test loads the same flagship data — so
-    # the fallback resolved $GITHUB_WORKSPACE/../emu198x, a path no runner has,
-    # and every pull request failed before it ever reached the build. Defined
-    # once here, every step inherits it and no step can be added without it.
-    env:
-      EMU198X_SOURCE_ROOT: ${{ github.workspace }}/emu198x-source
-    steps:
-      - name: Check out site
-        uses: actions/checkout@v7
-
-      - name: Check out Emu198x source docs
-        uses: actions/checkout@v7
-        with:
-          repository: emu198x/emu198x
-          path: emu198x-source
-
-      - name: Set up Node
-        uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      # The prose gate shells out to vale, which is not on the runner. It fails
-      # loudly when the binary is missing rather than skipping — that is the
-      # point of it — so the build cannot pass without this step, and cannot
-      # quietly pass over unchecked prose either.
-      - name: Install the house prose style
-        run: |
-          set -euo pipefail
-          curl -fsSL "https://github.com/errata-ai/vale/releases/download/v${VALE_VERSION}/vale_${VALE_VERSION}_Linux_64-bit.tar.gz" \
-            | tar -xz -C /usr/local/bin vale
-          vale --version
-          vale sync
-        env:
-          VALE_VERSION: 3.17.1
-
-      - name: Run tests
-        run: npm test
-
-      - name: Build site
-        run: npm run build
-
-      # Between building and publishing, because a page that fails WCAG AA is
-      # not one to deploy. Every route, both themes — roughly half the defects
-      # this caught when it was first run existed in exactly one of them.
-      - name: Install the browser the sweep drives
-        run: npx playwright install --with-deps chromium
-
-      - name: Check accessibility
-        run: npm run a11y
-
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v5
-        with:
-          path: dist
-
-  deploy:
-    name: Deploy GitHub Pages
-    needs: build
-    # A pull request gets every check above and stops there. Deploying one
-    # would publish an unmerged branch to the live site.
-    if: github.event_name != 'pull_request'
-    runs-on: ubuntu-latest
-    timeout-minutes: 30
-    permissions:
-      contents: read
-      pages: write
-      id-token: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v5
+  pages:
+    name: Pages
+    uses: stevehill1981/198x-workflows/.github/workflows/pages-astro.yml@v1
+    with:
+      # Vale is the house prose style, which the build's prose check needs.
+      check-command: |
+        curl -fsSL "https://github.com/errata-ai/vale/releases/download/v3.17.1/vale_3.17.1_Linux_64-bit.tar.gz" \
+          | sudo tar -xz -C /usr/local/bin vale
+        vale --version
+        vale sync
+        npm test
+      browser-check-command: npm run a11y
