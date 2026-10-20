@@ -16,11 +16,12 @@ machine catalogue and its build live in the emulator repo's `web-player/`;
 change the player there, not here. See its README for what the player does and
 how it is checked.
 
-Run `npm run build:player` before the first development or site build. It
-builds the player from `EMU198X_SOURCE_ROOT` (default `../emu198x`) into
-`public/emulators/`, which is generated and ignored. The build needs that
-checkout's Rust toolchain, the `wasm32-unknown-unknown` target and `wasm-pack`.
-`npm run dev` and `npm run build` stop with a message if the player is missing.
+The player is the `@emu198x/player` npm package, pinned exactly in
+`package.json` and built once by each Emu198x release (umbrella
+`decisions/browser-bundles-ship-as-npm-packages.md`). `npm run bundles`, which
+`npm run dev` and `npm run build` run first, copies it into
+`public/emulators/`, generated and ignored. No Rust toolchain is needed here.
+A new Emu198x release arrives as a Dependabot pull request.
 
-No firmware file or visitor media is copied into the site. The Pages workflow builds
-the player before Astro, so emulator changes must land before the site uses them.
+No firmware file or visitor media is copied into the site. The player's
+Spectrum module carries the 48K ROM, compiled in by Emu198x's publish job.
