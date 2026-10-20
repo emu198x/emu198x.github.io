@@ -1,0 +1,31 @@
+# Dependabot version updates, as on the other 198x sites.
+#
+# npm includes @emu198x/player, the browser player, pinned exactly: a new
+# Emu198x release arrives here as a pull request whose build runs before it
+# deploys (umbrella decisions/browser-bundles-ship-as-npm-packages.md).
+
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "daily"
+    open-pull-requests-limit: 10
+    groups:
+      npm-minor-patch:
+        exclude-patterns:
+          - "@emu198x/*"
+        update-types:
+          - "minor"
+          - "patch"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    groups:
+      github-actions:
+        update-types:
+          - "minor"
+          - "patch"
