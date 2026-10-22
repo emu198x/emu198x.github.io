@@ -104,7 +104,11 @@ const variantRows = fleet.flatMap((entry) => {
             <a
               class="frame"
               href={`/systems/${entry.machineId}/`}
-              aria-label={`${entry.machineId} system page`}
+              aria-label={
+                hasImage
+                  ? `${entry.machineId} system page`
+                  : `${capture ? pendingLabel : 'No capture yet'}: ${entry.machineId} system page`
+              }
             >
               {hasImage ? (
                 <img
