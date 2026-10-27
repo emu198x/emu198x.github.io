@@ -217,5 +217,5 @@ export function buildMatrix({ machines, version, releaseAssets }) {
 
 /** The count the page publishes, measured from the matrix it just built. */
 export function archiveCount(matrix) {
-  return matrix.reduce((total, machine) => total + machine.builds.length, 0);
+  return new Set(matrix.flatMap((machine) => machine.builds.map((build) => build.file))).size;
 }

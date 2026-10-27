@@ -200,6 +200,20 @@ test('the matrix gives every machine every artifact the release contains', () =>
   assert.equal(archiveCount(matrix), 10);
 });
 
+test('machines sharing a shipped crate keep their links and count archives once', () => {
+  const c64 = { machineId: 'commodore-c64', crate: 'emu198x-c64' };
+  const c128 = { machineId: 'commodore-c128', crate: 'emu198x-c64' };
+  const matrix = buildMatrix({
+    machines: [c64, c128, SPECTRUM],
+    version: '0.5.0',
+    releaseAssets: releaseAssets(c64, SPECTRUM),
+  });
+  assert.deepEqual(matrix.map(machine => machine.machineId), [c64.machineId, c128.machineId, SPECTRUM.machineId]);
+  assert.deepEqual(matrix[0].builds, matrix[1].builds);
+  assert.equal(matrix[0].builds.length, TARGETS.length);
+  assert.equal(archiveCount(matrix), releaseAssets(c64, SPECTRUM).size);
+});
+
 test('the matrix omits an artifact the release did not publish', () => {
   const assets = releaseAssets(SPECTRUM);
   assets.delete(assetName(SPECTRUM.crate, TARGETS[2]));
@@ -264,17 +278,22 @@ test('the live registry joins every machine to the current target set', async ()
     releaseAssets: releaseAssets(...fleet),
   });
 
-  assert.equal(archiveCount(matrix), matrix.length * 5);
+  assert.equal(archiveCount(matrix), new Set(fleet.map(machine => machine.crate)).size * TARGETS.length);
 
-  const names = new Set();
+  const owners = new Map();
   for (const machine of matrix) {
+    const targets = new Set();
     for (const build of machine.builds) {
       assert.match(
         build.file,
         /^emu198x-[a-z0-9-]+-(aarch64-apple-darwin|x86_64-apple-darwin|x86_64-pc-windows-msvc|aarch64-unknown-linux-gnu|x86_64-unknown-linux-gnu)\.(tar\.gz|tar\.xz|zip)$/,
       );
-      assert.ok(!names.has(build.file), `two machines claim ${build.file}`);
-      names.add(build.file);
+      assert.ok(!targets.has(build.target.id), `duplicate target for ${machine.machineId}`);
+      targets.add(build.target.id);
+      if (owners.has(build.file)) {
+        assert.equal(owners.get(build.file), machine.crate, `different crates claim ${build.file}`);
+      }
+      owners.set(build.file, machine.crate);
     }
   }
 });
