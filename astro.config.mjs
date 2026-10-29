@@ -10,6 +10,12 @@ export default defineConfig({
   integrations: [mdx(), sitemap()],
   redirects: {
     '/docs/status/current-system-usability': '/accuracy/',
+    '/systems/sord-m5': '/systems/sord-m5-ntsc/',
+    '/systems/commodore-vic-20': '/systems/commodore-vic-20-ntsc/',
+    '/systems/spectravideo-svi-328': '/systems/spectravideo-svi-328-ntsc/',
+    '/systems/coleco-colecovision': '/systems/coleco-colecovision-ntsc/',
+    '/systems/microsoft-msx1': '/systems/',
+    '/systems/microsoft-msx2': '/systems/',
   },
   markdown: {
     processor: unified({

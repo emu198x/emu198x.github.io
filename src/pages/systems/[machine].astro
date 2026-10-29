@@ -20,6 +20,8 @@ export async function getStaticPaths() {
 }
 
 const { entry, evidence } = Astro.props;
+// The official product name keeps Color; the registry key remains unchanged.
+const pageName = entry.machineId === 'nintendo-game-boy-color' ? 'Nintendo Game Boy Color' : entry.machineId;
 // The boot capture, asked for by kind through the fleet module — the one
 // definition of "captured" this site has, shared with /systems/ and
 // /accuracy/ so all three answer the same for the same fleet.
@@ -40,8 +42,8 @@ const software = softwareCapture(entry);
 ---
 
 <BaseLayout
-  title={entry.machineId}
-  description={`Emu198x evidence for ${entry.machineId}: boot capture, crate coverage, and open work.`}
+  title={pageName}
+  description={`Emu198x evidence for ${pageName}: boot capture, crate coverage, and open work.`}
 >
   <main class="container machine" data-pagefind-body>
     <p class="eyebrow">System</p>
