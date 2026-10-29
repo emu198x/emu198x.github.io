@@ -565,7 +565,7 @@ export const bootScreenshots = [
     rightsNote: 'Captured from a synthetic cartridge built from source in this project. No third-party software is involved.',
     capture: {
       package: 'emu198x-atari-2600',
-      args: [
+      args: ['--model', 'atari-2600-ntsc',
         '--cart', '{source}/test-data/synthetic-cartridges/atari-2600-logo.bin',
         '--frames', '300',
         '--screenshot', '{output}',
@@ -601,7 +601,7 @@ export const bootScreenshots = [
     rightsNote: 'Captured from a synthetic cartridge built from source in this project. No third-party software is involved.',
     capture: {
       package: 'emu198x-atari-7800',
-      args: [
+      args: ['--model', 'atari-7800-ntsc',
         '--cart', '{source}/test-data/synthetic-cartridges/atari-7800-logo.bin',
         '--frames', '300',
         '--screenshot', '{output}',
@@ -644,7 +644,7 @@ export const bootScreenshots = [
     caption: 'ZX81 boot screen.',
     capture: {
       package: 'emu198x-sinclair-zx81',
-      args: ['--frames', '300', '--screenshot', '{output}'],
+      args: ['--model', 'sinclair-zx81','--frames', '300', '--screenshot', '{output}'],
       requiredFiles: [`${romRoot}/sinclair-zx81/zx81.rom`],
     },
   },
@@ -657,7 +657,7 @@ export const bootScreenshots = [
     caption: 'ZX80 FAST-mode boot display.',
     capture: {
       package: 'emu198x-sinclair-zx80',
-      args: ['--frames', '300', '--screenshot', '{output}'],
+      args: ['--model', 'sinclair-zx80','--frames', '300', '--screenshot', '{output}'],
       requiredFiles: [`${romRoot}/sinclair-zx80/zx80.rom`],
     },
   },

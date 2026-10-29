@@ -38,3 +38,11 @@ test('board mappings and capture claims join the actual flagship registry', () =
   assert.deepEqual(sony.capture.args.slice(0, 2), ['--model', 'sony-hb-f1']);
   assert.ok(!bootScreenshots.some(entry => entry.image === '/media/boot/msx1.png'));
 });
+
+test('regional Atari and ZX boards resolve only their own existing player profile', () => {
+  for (const [id, familyId, variant] of boardProfiles.filter(([id]) => /^(atari-(2600|7800)|sinclair-zx8[01]|timex-ts1000)/.test(id))) {
+    const entry = family(familyId, [variant]);
+    assert.deepEqual(browserPlayerFor(id, [entry]), {entry, variant}, id);
+    assert.equal(browserPlayerFor(id, [family(familyId, [])]), null, id);
+  }
+});
