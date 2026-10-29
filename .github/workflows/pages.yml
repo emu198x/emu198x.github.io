@@ -33,7 +33,7 @@ jobs:
     with:
       # Vale is the house prose style, which the build's prose check needs.
       check-command: |
-        curl -fsSL "https://github.com/errata-ai/vale/releases/download/v3.17.1/vale_3.17.1_Linux_64-bit.tar.gz" \
+        curl -fsSL "https://github.com/errata-ai/vale/releases/download/v3.25.1/vale_3.25.1_Linux_64-bit.tar.gz" \
           | sudo tar -xz -C /usr/local/bin vale
         vale --version
         vale sync

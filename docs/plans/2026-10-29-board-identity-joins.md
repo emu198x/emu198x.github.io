@@ -30,3 +30,9 @@ The new Sony HB-F1 PNG is a 400-native-frame capture with f1bios.rom SHA-1
 `b8e30d604d319d511cbfbc61e5d8c38fbb9c5a33`, identified in MAME's HB-F1
 catalogue. The capture reaches MSX BASIC 2.0 and Ok. Firmware is not committed.
 The old generic MSX image remains unclaimed; it is not evidence for a maker.
+
+CI's Vale 3.17.1 ignores the exact HTML identifier exemption and reproduces two
+alerts in the negative-control fixture; current stable 3.25.1 produces only the
+ordinary-prose alert. Verify the downloaded binaries against upstream release
+SHA-256 digests, then update the existing CI pin and run the full checks with
+3.25.1. Keep the negative control unchanged.
