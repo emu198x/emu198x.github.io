@@ -1,12 +1,14 @@
 ---
 import catalog from '../../public/emulators/catalog.json';
+import {browserPlayerFor} from '../lib/browser-player.js';
 interface Props { system: string }
-const entry = catalog.find(item => item.id === Astro.props.system || item.aliases.includes(Astro.props.system));
+const player = browserPlayerFor(Astro.props.system, catalog);
+const entry = player?.entry;
 const display = entry?.kind === 'game-boy' ? [480, '160 / 144'] : entry?.kind === 'nes' ? [640, '256 / 240'] : [760, entry?.kind === 'spectrum' ? '352 / 296' : entry?.kind === 'c64' ? '416 / 312' : '768 / 576'];
 ---
 {entry && <section class="browser-player" aria-label={`${entry.name} player`}>
   <h2>Play {entry.name}</h2>
-  <emu198x-player system={entry.id} variant={entry.variantAliases?.[Astro.props.system]} style={`--player-width: ${display[0]}px; --player-ratio: ${display[1]}`} >
+  <emu198x-player system={entry.id} variant={player.variant} style={`--player-width: ${display[0]}px; --player-ratio: ${display[1]}`} >
     <div class="player-placeholder" role="status">Loading player…</div>
   </emu198x-player>
   <noscript><p>Enable JavaScript to use the emulator.</p></noscript>
