@@ -17,8 +17,10 @@
 /systems/acorn-bbc-micro/
 /systems/acorn-electron/
 /systems/amstrad-cpc/
+/systems/atari-2600-pal/
 /systems/atari-2600/
 /systems/atari-5200/
+/systems/atari-7800-pal/
 /systems/atari-7800/
 /systems/atari-800xl/
 /systems/atari-st/
@@ -64,6 +66,7 @@
 /systems/sega-mega-drive/
 /systems/sega-sg-1000/
 /systems/sinclair-zx-spectrum/
+/systems/sinclair-zx80-usa/
 /systems/sinclair-zx80/
 /systems/sinclair-zx81/
 /systems/snk-neo-geo/
@@ -79,5 +82,6 @@
 /systems/tandy-coco-2/
 /systems/tandy-coco/
 /systems/tatung-einstein/
+/systems/timex-ts1000/
 /systems/toshiba-hx-10/
 /systems/yamaha-cx5m/
