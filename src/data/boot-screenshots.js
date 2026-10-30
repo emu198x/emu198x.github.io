@@ -326,7 +326,7 @@ export const bootScreenshots = [
     name: 'Atari 800XL',
     group: 'Extended',
     image: '/media/boot/atari-800xl.png',
-    caption: 'Atari BASIC READY prompt.',
+    caption: 'Atari BASIC READY prompt on the NTSC 800XL.',
     capture: {
       package: 'emu198x-atari-800xl',
       args: ['--model', 'atari-800xl-ntsc',
