@@ -86,7 +86,7 @@ export function loadSiteData() {
 //
 // Variants are checked with their parent, never skipped: they hang off
 // capture.variants rather than entry.captures, so a loop over entry.captures
-// alone walks past all nineteen of them — and the systems page publishes a
+// alone walks past all of them — and the systems page publishes a
 // rights cell for every one. A note blanked to '' slips past the normalizer's
 // `?? defaultRightsNote` default untouched, which is how a variant row shipped
 // a visible screenshot beside an empty rights claim with the build still green.

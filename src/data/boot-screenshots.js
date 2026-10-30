@@ -110,14 +110,6 @@ const spectrumVariants = [
   spectrumVariant('timex-tc2048', 'Timex TC2048', 'timex_tc2048', [
     `${romRoot}/timex-tc2048/tc2048.rom`,
   ]),
-  spectrumVariant('timex-tc2068', 'Timex TC2068', 'timex_tc2068', [
-    `${romRoot}/timex-ts2068/ts2068.rom`,
-    `${romRoot}/timex-ts2068/exrom.rom`,
-  ]),
-  spectrumVariant('timex-ts2068', 'Timex TS2068', 'timex_ts2068', [
-    `${romRoot}/timex-ts2068/ts2068.rom`,
-    `${romRoot}/timex-ts2068/exrom.rom`,
-  ]),
 ];
 
 const amigaVariant = (id, name, model, kickstart) => ({
