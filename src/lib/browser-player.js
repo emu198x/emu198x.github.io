@@ -1,6 +1,9 @@
 // Physical board -> existing browser family/profile. IDs are stated rather
 // than inferred from names: a published player can predate a board split.
 export const boardProfiles = Object.freeze([
+  ['sega-mega-drive-japan', 'sega-mega-drive', 'mega-drive-japan'],
+  ['sega-genesis', 'sega-mega-drive', 'genesis'],
+  ['sega-mega-drive-europe', 'sega-mega-drive', 'mega-drive-europe'],
   ['mattel-aquarius', 'mattel-aquarius', 'mattel-aquarius'],
   ['mattel-aquarius-pal', 'mattel-aquarius', 'mattel-aquarius-pal'],
   ['atari-800xl', 'atari-800xl', 'atari-800xl-ntsc'],
@@ -47,7 +50,7 @@ export const boardProfiles = Object.freeze([
 ]);
 
 export function browserPlayerFor(machineId, catalog) {
-  if (['microsoft-msx1', 'microsoft-msx2'].includes(machineId)) return null;
+  if (['microsoft-msx1', 'microsoft-msx2', 'sega-mega-drive'].includes(machineId)) return null;
   const board = boardProfiles.find(([id]) => id === machineId);
   if (board) {
     const [, family, variant] = board;
