@@ -95,3 +95,6 @@
 
 /systems/timex-tc2068/
 /systems/timex-ts2068/
+
+/systems/nintendo-nes-ntsc/
+/systems/nintendo-nes-pal/
