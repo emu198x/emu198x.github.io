@@ -17,11 +17,14 @@
 /systems/acorn-bbc-micro/
 /systems/acorn-electron/
 /systems/amstrad-cpc/
+/systems/atari-130xe-ntsc/
+/systems/atari-130xe-pal/
 /systems/atari-2600-pal/
 /systems/atari-2600/
 /systems/atari-5200/
 /systems/atari-7800-pal/
 /systems/atari-7800/
+/systems/atari-800xl-pal/
 /systems/atari-800xl/
 /systems/atari-st/
 /systems/coleco-colecovision-ntsc/
