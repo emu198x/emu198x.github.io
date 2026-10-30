@@ -329,7 +329,7 @@ export const bootScreenshots = [
     caption: 'Atari BASIC READY prompt.',
     capture: {
       package: 'emu198x-atari-800xl',
-      args: [
+      args: ['--model', 'atari-800xl-ntsc',
         '--os',
         `${romRoot}/atari-800xl/atarixl.rom`,
         '--basic',

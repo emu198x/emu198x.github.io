@@ -46,3 +46,20 @@ test('regional Atari and ZX boards resolve only their own existing player profil
     assert.equal(browserPlayerFor(id, [family(familyId, [])]), null, id);
   }
 });
+
+
+test('XL/XE pages select the four stable family profile contracts', () => {
+  const entry = family('atari-800xl', ['atari-800xl-ntsc', 'atari-800xl-pal', 'atari-130xe-ntsc', 'atari-130xe-pal']);
+  for (const [board, variant] of [
+    ['atari-800xl', 'atari-800xl-ntsc'],
+    ['atari-800xl-pal', 'atari-800xl-pal'],
+    ['atari-130xe-ntsc', 'atari-130xe-ntsc'],
+    ['atari-130xe-pal', 'atari-130xe-pal'],
+  ]) assert.deepEqual(browserPlayerFor(board, [entry]), {entry, variant}, board);
+});
+
+test('a player with only XL profiles cannot substitute one for an XE board', () => {
+  const xlOnly = family('atari-800xl', ['atari-800xl-ntsc', 'atari-800xl-pal']);
+  assert.equal(browserPlayerFor('atari-130xe-ntsc', [xlOnly]), null);
+  assert.equal(browserPlayerFor('atari-130xe-pal', [xlOnly]), null);
+});
