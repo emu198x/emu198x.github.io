@@ -68,6 +68,9 @@
 /systems/sega-master-system-pal/
 /systems/sega-master-system/
 /systems/sega-mega-drive/
+/systems/sega-mega-drive-japan/
+/systems/sega-genesis/
+/systems/sega-mega-drive-europe/
 /systems/sega-sg-1000/
 /systems/sinclair-zx-spectrum/
 /systems/sinclair-zx80-usa/

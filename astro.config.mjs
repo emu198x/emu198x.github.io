@@ -9,6 +9,7 @@ export default defineConfig({
   site: 'https://emu198x.github.io',
   integrations: [mdx(), sitemap()],
   redirects: {
+    '/systems/sega-mega-drive': '/systems/sega-genesis/',
     '/docs/status/current-system-usability': '/accuracy/',
     '/systems/sord-m5': '/systems/sord-m5-ntsc/',
     '/systems/commodore-vic-20': '/systems/commodore-vic-20-ntsc/',

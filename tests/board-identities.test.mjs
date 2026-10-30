@@ -71,3 +71,21 @@ test('Aquarius pages require the exact regional profile', () => {
   assert.deepEqual(browserPlayerFor('mattel-aquarius-pal', [entry]), {entry, variant: 'mattel-aquarius-pal'});
   assert.equal(browserPlayerFor('mattel-aquarius-pal', [family('mattel-aquarius', ['mattel-aquarius'])]), null);
 });
+
+
+test('Mega Drive boards select their existing market profiles', () => {
+  const entry = family('sega-mega-drive', ['mega-drive-japan', 'genesis', 'mega-drive-europe']);
+  for (const [id, variant] of [
+    ['sega-mega-drive-japan', 'mega-drive-japan'],
+    ['sega-genesis', 'genesis'],
+    ['sega-mega-drive-europe', 'mega-drive-europe'],
+  ]) {
+    assert.deepEqual(browserPlayerFor(id, [entry]), {entry, variant});
+    assert.equal(browserPlayerFor(id, [family('sega-mega-drive', [])]), null);
+  }
+});
+
+
+test('the retired Mega Drive aggregate cannot embed a default board', () => {
+  assert.equal(browserPlayerFor('sega-mega-drive', [family('sega-mega-drive', ['genesis'])]), null);
+});
