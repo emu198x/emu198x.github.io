@@ -109,3 +109,17 @@ test('Timex diagnostic stripes cannot become public boot evidence', () => {
     assert.ok(existsSync(new URL(`../public/media/boot/${id}.png`, import.meta.url)), 'diagnostic image retained');
   }
 });
+
+
+test('NES boards select exact regional variants and the old plate proves NTSC only', () => {
+  const entry = family('nintendo-nes', ['nintendo-nes-ntsc', 'nintendo-nes-pal']);
+  for (const id of ['nintendo-nes-ntsc', 'nintendo-nes-pal']) {
+    assert.deepEqual(browserPlayerFor(id, [entry]), {entry, variant: id});
+    assert.equal(browserPlayerFor(id, [family('nintendo-nes', [])]), null);
+  }
+  assert.equal(browserPlayerFor('nintendo-nes', [entry]), null);
+  const plate = bootScreenshots.find(item => item.id === 'nes');
+  assert.equal(plate.machineId, 'nintendo-nes-ntsc');
+  assert.deepEqual(plate.capture.args.slice(0, 2), ['--model', 'nintendo-nes-ntsc']);
+  assert.ok(!bootScreenshots.some(item => item.machineId === 'nintendo-nes-pal'));
+});

@@ -228,10 +228,10 @@ export const bootScreenshots = [
   },
   {
     id: 'nes',
-    machineId: 'nintendo-nes',
-    name: 'Nintendo NES',
+    machineId: 'nintendo-nes-ntsc',
+    name: 'Nintendo NES (NTSC)',
     kind: 'boot',
-    title: 'Nintendo NES cartridge boot',
+    title: 'Nintendo NES NTSC cartridge boot',
     group: 'Primary',
     image: '/media/boot/nes.png',
     caption: 'Synthetic plate cartridge: the Emu198x wordmark, set in this machine\'s own tiles and drawn through its real video path.',
@@ -239,6 +239,7 @@ export const bootScreenshots = [
     capture: {
       package: 'emu198x-nes',
       args: [
+        '--model', 'nintendo-nes-ntsc',
         '--rom', '{source}/test-data/synthetic-cartridges/nintendo-nes-logo.nes',
         '--frames', '300',
         '--screenshot', '{output}',
