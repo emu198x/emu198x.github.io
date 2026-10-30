@@ -1,6 +1,8 @@
 // Physical board -> existing browser family/profile. IDs are stated rather
 // than inferred from names: a published player can predate a board split.
 export const boardProfiles = Object.freeze([
+  ['mattel-aquarius', 'mattel-aquarius', 'mattel-aquarius'],
+  ['mattel-aquarius-pal', 'mattel-aquarius', 'mattel-aquarius-pal'],
   ['atari-800xl', 'atari-800xl', 'atari-800xl-ntsc'],
   ['atari-800xl-pal', 'atari-800xl', 'atari-800xl-pal'],
   ['atari-130xe-ntsc', 'atari-800xl', 'atari-130xe-ntsc'],

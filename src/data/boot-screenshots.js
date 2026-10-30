@@ -671,6 +671,7 @@ export const bootScreenshots = [
     capture: {
       package: 'emu198x-mattel-aquarius',
       args: [
+        '--model', 'mattel-aquarius',
         '--bios',
         `${romRoot}/mattel-aquarius/aquarius.rom`,
         '--char',

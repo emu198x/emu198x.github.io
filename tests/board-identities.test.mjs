@@ -63,3 +63,11 @@ test('a player with only XL profiles cannot substitute one for an XE board', () 
   assert.equal(browserPlayerFor('atari-130xe-ntsc', [xlOnly]), null);
   assert.equal(browserPlayerFor('atari-130xe-pal', [xlOnly]), null);
 });
+
+
+test('Aquarius pages require the exact regional profile', () => {
+  const entry = family('mattel-aquarius', ['mattel-aquarius', 'mattel-aquarius-pal']);
+  assert.deepEqual(browserPlayerFor('mattel-aquarius', [entry]), {entry, variant: 'mattel-aquarius'});
+  assert.deepEqual(browserPlayerFor('mattel-aquarius-pal', [entry]), {entry, variant: 'mattel-aquarius-pal'});
+  assert.equal(browserPlayerFor('mattel-aquarius-pal', [family('mattel-aquarius', ['mattel-aquarius'])]), null);
+});
