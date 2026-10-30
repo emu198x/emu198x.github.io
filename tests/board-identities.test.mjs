@@ -2,7 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {boardProfiles, browserPlayerFor} from '../src/lib/browser-player.js';
 import {loadSiteData} from '../src/lib/site-data.js';
-import {bootScreenshots} from '../src/data/boot-screenshots.js';
+import {bootScreenshots, captureTargets} from '../src/data/boot-screenshots.js';
+import {existsSync} from 'node:fs';
 
 const family = (id, ids) => ({id, aliases: [], variants: ids.map(id => ({id}))});
 
@@ -88,4 +89,23 @@ test('Mega Drive boards select their existing market profiles', () => {
 
 test('the retired Mega Drive aggregate cannot embed a default board', () => {
   assert.equal(browserPlayerFor('sega-mega-drive', [family('sega-mega-drive', ['genesis'])]), null);
+});
+
+
+test('Timex 2068 pages select exact existing Spectrum variants', () => {
+  const entry = family('sinclair-zx-spectrum', ['spectrum_48k', 'timex_tc2068', 'timex_ts2068']);
+  for (const [id, variant] of [['timex-tc2068', 'timex_tc2068'], ['timex-ts2068', 'timex_ts2068']]) {
+    assert.deepEqual(browserPlayerFor(id, [entry]), {entry, variant});
+    assert.equal(browserPlayerFor(id, [family('sinclair-zx-spectrum', ['spectrum_48k'])]), null);
+  }
+});
+
+test('Timex diagnostic stripes cannot become public boot evidence', () => {
+  const targets = captureTargets();
+  assert.ok(targets.length > 0);
+  assert.ok(targets.some(target => target.id === 'zx-spectrum'));
+  for (const id of ['timex-tc2068', 'timex-ts2068']) {
+    assert.ok(!targets.some(target => target.id === id), id);
+    assert.ok(existsSync(new URL(`../public/media/boot/${id}.png`, import.meta.url)), 'diagnostic image retained');
+  }
 });

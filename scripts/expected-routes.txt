@@ -92,3 +92,6 @@
 /systems/timex-ts1000/
 /systems/toshiba-hx-10/
 /systems/yamaha-cx5m/
+
+/systems/timex-tc2068/
+/systems/timex-ts2068/

@@ -18,6 +18,8 @@ export const boardProfiles = Object.freeze([
   ['sinclair-zx80-usa', 'sinclair-zx80', 'sinclair-zx80-usa'],
   ['sinclair-zx81', 'sinclair-zx81', 'sinclair-zx81'],
   ['timex-ts1000', 'sinclair-zx81', 'timex-ts1000'],
+  ['timex-tc2068', 'sinclair-zx-spectrum', 'timex_tc2068'],
+  ['timex-ts2068', 'sinclair-zx-spectrum', 'timex_ts2068'],
   ['acorn-bbc-micro', 'acorn-bbc-micro', 'acorn-bbc-micro-b'],
   ['acorn-bbc-micro-b-plus', 'acorn-bbc-micro', 'acorn-bbc-micro-b-plus'],
   ['acorn-bbc-master-128', 'acorn-bbc-micro', 'acorn-bbc-master-128'],
