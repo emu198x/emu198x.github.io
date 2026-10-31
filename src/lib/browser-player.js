@@ -1,6 +1,12 @@
 // Physical board -> existing browser family/profile. IDs are stated rather
 // than inferred from names: a published player can predate a board split.
 export const boardProfiles = Object.freeze([
+  ['commodore-c64-pal-breadbin', 'commodore-c64', 'pal'],
+  ['commodore-c64-ntsc-breadbin', 'commodore-c64', 'ntsc'],
+  ['commodore-c64c-pal', 'commodore-c64', 'c64c-pal'],
+  ['commodore-c64c-ntsc', 'commodore-c64', 'c64c-ntsc'],
+  ['commodore-c128-pal', 'commodore-c128', 'c128-pal'],
+  ['commodore-c128-ntsc', 'commodore-c128', 'c128-ntsc'],
   ['atari-520st-pal', 'atari-st', '520st-pal'],
   ['atari-520st-ntsc', 'atari-st', '520st-ntsc'],
   ['atari-1040st-pal', 'atari-st', '1040st-pal'],
@@ -61,7 +67,7 @@ export const boardProfiles = Object.freeze([
 ]);
 
 export function browserPlayerFor(machineId, catalog) {
-  if (['microsoft-msx1', 'microsoft-msx2', 'sega-mega-drive', 'nintendo-nes', 'amstrad-cpc', 'atari-st'].includes(machineId)) return null;
+  if (['microsoft-msx1', 'microsoft-msx2', 'sega-mega-drive', 'nintendo-nes', 'amstrad-cpc', 'atari-st', 'commodore-c64', 'commodore-c128'].includes(machineId)) return null;
   const board = boardProfiles.find(([id]) => id === machineId);
   if (board) {
     const [, family, variant] = board;
