@@ -1,5 +1,3 @@
-
-
 /
 /accuracy/
 /docs/
@@ -48,6 +46,9 @@
 /systems/commodore-c64/
 /systems/commodore-c64c-ntsc/
 /systems/commodore-c64c-pal/
+/systems/commodore-pet-2001n-32k/
+/systems/commodore-pet-4032/
+/systems/commodore-pet-8032/
 /systems/commodore-pet/
 /systems/commodore-vic-20-ntsc/
 /systems/commodore-vic-20-pal/

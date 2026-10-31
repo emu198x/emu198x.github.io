@@ -178,3 +178,19 @@ test('C64 and C128 pages require an exact published variant and distinct capture
   assert.equal(images.size, 6);
   for (const legacy of ['commodore-c64', 'commodore-c128']) assert.equal(browserPlayerFor(legacy, [family(legacy, ['pal'])]), null);
 });
+
+
+test('corrected PET boards have distinct captures and reject the pinned hybrid player', () => {
+  const profiles = ['commodore-pet-2001n-32k', 'commodore-pet-40col', 'commodore-pet-80col'];
+  const ids = ['commodore-pet-2001n-32k', 'commodore-pet-4032', 'commodore-pet-8032'];
+  const pinned = family('commodore-pet', profiles);
+  for (const [index, id] of ids.entries()) {
+    const plate = captureTargets().find(item => item.machineId === id);
+    assert.ok(plate?.hasImage, id);
+    assert.equal(plate.image, `/media/boot/${id}.png`);
+    assert.deepEqual(plate.capture.args.slice(0, 4), ['--headless', '--model', profiles[index], '--rom-dir']);
+    assert.equal(browserPlayerFor(id, [pinned]), null);
+    assert.equal(browserPlayerFor(id, [family(id, profiles)]), null);
+  }
+  assert.equal(browserPlayerFor('commodore-pet', [pinned]), null);
+});

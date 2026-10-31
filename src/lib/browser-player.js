@@ -67,6 +67,10 @@ export const boardProfiles = Object.freeze([
 ]);
 
 export function browserPlayerFor(machineId, catalog) {
+  // Player 0.44.2's PET profiles use the old hybrid firmware/video contract.
+  // Even its matching 40/80 ID strings do not qualify these corrected boards.
+  // Enable exact mappings only after a corrected player has been published.
+  if (['commodore-pet', 'commodore-pet-2001n-32k', 'commodore-pet-4032', 'commodore-pet-8032'].includes(machineId)) return null;
   if (['microsoft-msx1', 'microsoft-msx2', 'sega-mega-drive', 'nintendo-nes', 'amstrad-cpc', 'atari-st', 'commodore-c64', 'commodore-c128'].includes(machineId)) return null;
   const board = boardProfiles.find(([id]) => id === machineId);
   if (board) {
