@@ -159,3 +159,22 @@ test('ST configurations require exact browser profiles and their own EmuTOS capt
   assert.equal(browserPlayerFor('atari-st', [entry]), null);
   assert.equal(new Set(paths).size, variants.length);
 });
+
+test('C64 and C128 pages require an exact published variant and distinct captures', () => {
+  const mappings = boardProfiles.filter(([id]) => /^commodore-(c64|c128)/.test(id));
+  assert.equal(mappings.length, 6);
+  const images = new Set();
+  for (const [id, group, variant] of mappings) {
+    const exact = family(group, [variant]);
+    assert.deepEqual(browserPlayerFor(id, [exact]), {entry: exact, variant});
+    assert.equal(browserPlayerFor(id, [family(group, [])]), null);
+    assert.equal(browserPlayerFor(id, []), null);
+    const capture = bootScreenshots.find(item => item.machineId === id);
+    assert.ok(capture);
+    const args = capture.capture.args;
+    assert.equal(args[args.indexOf('--model') + 1], variant);
+    images.add(capture.image);
+  }
+  assert.equal(images.size, 6);
+  for (const legacy of ['commodore-c64', 'commodore-c128']) assert.equal(browserPlayerFor(legacy, [family(legacy, ['pal'])]), null);
+});
