@@ -98,3 +98,6 @@
 
 /systems/nintendo-nes-ntsc/
 /systems/nintendo-nes-pal/
+/systems/amstrad-cpc464/
+/systems/amstrad-cpc664/
+/systems/amstrad-cpc6128/

@@ -123,3 +123,19 @@ test('NES boards select exact regional variants and the old plate proves NTSC on
   assert.deepEqual(plate.capture.args.slice(0, 2), ['--model', 'nintendo-nes-ntsc']);
   assert.ok(!bootScreenshots.some(item => item.machineId === 'nintendo-nes-pal'));
 });
+
+
+test('CPC owners require their exact browser variant and separate boot captures', () => {
+  const ids = ['amstrad-cpc464', 'amstrad-cpc664', 'amstrad-cpc6128'];
+  const entry = family('amstrad-cpc', ids);
+  for (const id of ids) {
+    assert.deepEqual(browserPlayerFor(id, [entry]), {entry, variant: id});
+    assert.equal(browserPlayerFor(id, [family('amstrad-cpc', [])]), null);
+    const plate = bootScreenshots.find(item => item.machineId === id);
+    assert.ok(plate, id);
+    assert.deepEqual(plate.capture.args.slice(0, 2), ['--model', id]);
+    assert.ok(plate.capture.requiredFiles.some(path => path.endsWith(`${id.slice(8)}.rom`)));
+  }
+  assert.equal(browserPlayerFor('amstrad-cpc', [entry]), null);
+  assert.equal(new Set(bootScreenshots.filter(item => ids.includes(item.machineId)).map(item => item.image)).size, 3);
+});
