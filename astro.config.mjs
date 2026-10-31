@@ -9,6 +9,7 @@ export default defineConfig({
   site: 'https://emu198x.github.io',
   integrations: [mdx(), sitemap()],
   redirects: {
+    '/systems/atari-st': '/systems/atari-520st-pal/',
     '/systems/amstrad-cpc': '/systems/amstrad-cpc464/',
     '/systems/nintendo-nes': '/systems/nintendo-nes-ntsc/',
     '/systems/sega-mega-drive': '/systems/sega-genesis/',

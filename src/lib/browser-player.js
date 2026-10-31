@@ -1,6 +1,10 @@
 // Physical board -> existing browser family/profile. IDs are stated rather
 // than inferred from names: a published player can predate a board split.
 export const boardProfiles = Object.freeze([
+  ['atari-520st-pal', 'atari-st', '520st-pal'],
+  ['atari-520st-ntsc', 'atari-st', '520st-ntsc'],
+  ['atari-1040st-pal', 'atari-st', '1040st-pal'],
+  ['atari-1040st-ntsc', 'atari-st', '1040st-ntsc'],
   ['amstrad-cpc464', 'amstrad-cpc', 'amstrad-cpc464'],
   ['amstrad-cpc664', 'amstrad-cpc', 'amstrad-cpc664'],
   ['amstrad-cpc6128', 'amstrad-cpc', 'amstrad-cpc6128'],
@@ -57,7 +61,7 @@ export const boardProfiles = Object.freeze([
 ]);
 
 export function browserPlayerFor(machineId, catalog) {
-  if (['microsoft-msx1', 'microsoft-msx2', 'sega-mega-drive', 'nintendo-nes', 'amstrad-cpc'].includes(machineId)) return null;
+  if (['microsoft-msx1', 'microsoft-msx2', 'sega-mega-drive', 'nintendo-nes', 'amstrad-cpc', 'atari-st'].includes(machineId)) return null;
   const board = boardProfiles.find(([id]) => id === machineId);
   if (board) {
     const [, family, variant] = board;
