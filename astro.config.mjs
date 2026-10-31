@@ -9,6 +9,7 @@ export default defineConfig({
   site: 'https://emu198x.github.io',
   integrations: [mdx(), sitemap()],
   redirects: {
+    '/systems/commodore-pet': '/systems/commodore-pet-2001n-32k/',
     '/systems/commodore-c64': '/systems/commodore-c64-pal-breadbin/',
     '/systems/commodore-c128': '/systems/commodore-c128-pal/',
     '/systems/atari-st': '/systems/atari-520st-pal/',
