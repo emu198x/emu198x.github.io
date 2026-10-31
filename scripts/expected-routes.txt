@@ -101,3 +101,7 @@
 /systems/amstrad-cpc464/
 /systems/amstrad-cpc664/
 /systems/amstrad-cpc6128/
+/systems/atari-520st-pal/
+/systems/atari-520st-ntsc/
+/systems/atari-1040st-pal/
+/systems/atari-1040st-ntsc/

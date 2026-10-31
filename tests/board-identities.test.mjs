@@ -139,3 +139,23 @@ test('CPC owners require their exact browser variant and separate boot captures'
   assert.equal(browserPlayerFor('amstrad-cpc', [entry]), null);
   assert.equal(new Set(bootScreenshots.filter(item => ids.includes(item.machineId)).map(item => item.image)).size, 3);
 });
+
+
+test('ST configurations require exact browser profiles and their own EmuTOS captures', () => {
+  const variants = ['520st-pal', '520st-ntsc', '1040st-pal', '1040st-ntsc'];
+  const entry = family('atari-st', variants);
+  const paths = [];
+  for (const variant of variants) {
+    const id = `atari-${variant}`;
+    assert.deepEqual(browserPlayerFor(id, [entry]), {entry, variant});
+    assert.equal(browserPlayerFor(id, [family('atari-st', [])]), null);
+    assert.equal(browserPlayerFor(id, []), null);
+    const plate = bootScreenshots.find(item => item.machineId === id);
+    assert.ok(plate, id);
+    assert.deepEqual(plate.capture.args.slice(0, 2), ['--model', variant]);
+    assert.equal(plate.capture.mediaEnv, 'EMU198X_EMUTOS_ROM');
+    paths.push(plate.image);
+  }
+  assert.equal(browserPlayerFor('atari-st', [entry]), null);
+  assert.equal(new Set(paths).size, variants.length);
+});
