@@ -223,3 +223,20 @@ test('SG owners have exact captures and cannot substitute the old PAL clock or a
   }
   assert.ok(!captureTargets().some(c=>c.machineId==='sega-sg-1000'));
 });
+
+
+test('A1200 owners have regional captures and reject the A500-only browser constructor', () => {
+  const images = new Set();
+  for (const region of ['pal', 'ntsc']) {
+    const id = `commodore-amiga-a1200-${region}`;
+    const profile = `commodore-amiga-a1200-aga-${region}`;
+    assert.equal(browserPlayerFor(id, [family('commodore-amiga', [profile])]), null);
+    assert.equal(browserPlayerFor(id, [family(id, [profile])]), null);
+    const capture = captureTargets().find(item => item.machineId === id);
+    assert.ok(capture?.hasImage);
+    assert.equal(capture.capture.args[1], region === 'pal' ? 'a1200' : 'a1200-ntsc');
+    images.add(capture.image);
+  }
+  assert.equal(images.size, 2);
+  assert.ok(!captureTargets().some(item => item.id === 'amiga-a1200'));
+});
