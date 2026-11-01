@@ -194,3 +194,15 @@ test('corrected PET boards have distinct captures and reject the pinned hybrid p
   }
   assert.equal(browserPlayerFor('commodore-pet', [pinned]), null);
 });
+
+
+test('SNES regional owners require exact variants and do not invent a third board', () => {
+  const entry = family('nintendo-snes', ['snes-ntsc', 'snes-pal', 'super-famicom']);
+  for (const [id, variant] of [['nintendo-snes-ntsc', 'snes-ntsc'], ['nintendo-snes-pal', 'snes-pal']]) {
+    assert.deepEqual(browserPlayerFor(id, [entry]), {entry, variant});
+    assert.equal(browserPlayerFor(id, [family('nintendo-snes', ['super-famicom'])]), null);
+    assert.equal(browserPlayerFor(id, []), null);
+  }
+  assert.equal(browserPlayerFor('nintendo-snes', [entry]), null);
+  assert.ok(!boardProfiles.some(([id]) => id === 'nintendo-super-famicom'));
+});

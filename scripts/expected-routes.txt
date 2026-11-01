@@ -70,6 +70,8 @@
 /systems/nintendo-nes-ntsc/
 /systems/nintendo-nes-pal/
 /systems/nintendo-nes/
+/systems/nintendo-snes-ntsc/
+/systems/nintendo-snes-pal/
 /systems/nintendo-snes/
 /systems/nintendo-super-game-boy-2/
 /systems/nintendo-super-game-boy/
