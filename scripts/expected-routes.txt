@@ -37,6 +37,8 @@
 /systems/coleco-colecovision-ntsc/
 /systems/coleco-colecovision-pal/
 /systems/coleco-colecovision/
+/systems/commodore-amiga-a1200-ntsc/
+/systems/commodore-amiga-a1200-pal/
 /systems/commodore-amiga/
 /systems/commodore-c128-ntsc/
 /systems/commodore-c128-pal/
