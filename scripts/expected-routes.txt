@@ -91,6 +91,9 @@
 /systems/sega-mega-drive-europe/
 /systems/sega-mega-drive-japan/
 /systems/sega-mega-drive/
+/systems/sega-sg-1000-ii-ntsc/
+/systems/sega-sg-1000-ntsc/
+/systems/sega-sg-1000-pal/
 /systems/sega-sg-1000/
 /systems/sinclair-zx-spectrum/
 /systems/sinclair-zx80-usa/

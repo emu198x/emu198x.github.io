@@ -9,6 +9,7 @@ export default defineConfig({
   site: 'https://emu198x.github.io',
   integrations: [mdx(), sitemap()],
   redirects: {
+    '/systems/sega-sg-1000': '/systems/sega-sg-1000-ntsc/',
     '/systems/nintendo-snes': '/systems/nintendo-snes-ntsc/',
     '/systems/commodore-pet': '/systems/commodore-pet-2001n-32k/',
     '/systems/commodore-c64': '/systems/commodore-c64-pal-breadbin/',
