@@ -606,24 +606,20 @@ export const bootScreenshots = [
       requiredFiles: [`${romRoot}/coleco-colecovision/colecovision.rom`],
     },
   },
-  {
-    id: 'sega-sg-1000',
-    machineId: 'sega-sg-1000',
-    name: 'Sega SG-1000',
-    group: 'Extended',
-    image: '/media/boot/sega-sg-1000.png',
-    caption: 'Synthetic boot cartridge: a known colour written through CRAM and the VDP registers.',
-    rightsNote: 'Captured from a synthetic cartridge built from source in this project. No third-party software is involved.',
+  ...[
+    ['sega-sg-1000-ntsc', 'Sega SG-1000 NTSC'],
+    ['sega-sg-1000-pal', 'Sega SG-1000 PAL'],
+    ['sega-sg-1000-ii-ntsc', 'Sega SG-1000 II (early TMS9918 NTSC)'],
+  ].map(([id, name]) => ({
+    id, machineId: id, name, group: 'Extended', image: `/media/boot/${id}.png`,
+    caption: 'Project-written white-backdrop test cartridge after 120 native fields. This checks CPU, I/O and VDP register execution; it does not qualify historical software.',
+    rightsNote: 'Captured from a project-written synthetic cartridge. No third-party software is involved.',
     capture: {
       package: 'emu198x-sega-sg-1000',
-      args: [
-        '--cart', '{source}/test-data/sega/synthetic-cart/sg-1000.sg',
-        '--frames', '120',
-        '--screenshot', '{output}',
-      ],
+      args: ['--model', id, '--cart', '{source}/test-data/sega/synthetic-cart/sg-1000.sg', '--frames', '120', '--screenshot', '{output}'],
       requiredFiles: ['{source}/test-data/sega/synthetic-cart/sg-1000.sg'],
     },
-  },
+  })),
   {
     id: 'sega-game-gear',
     machineId: 'sega-game-gear',

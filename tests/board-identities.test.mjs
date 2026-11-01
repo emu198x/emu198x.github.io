@@ -206,3 +206,20 @@ test('SNES regional owners require exact variants and do not invent a third boar
   assert.equal(browserPlayerFor('nintendo-snes', [entry]), null);
   assert.ok(!boardProfiles.some(([id]) => id === 'nintendo-super-famicom'));
 });
+
+
+test('SG owners have exact captures and cannot substitute the old PAL clock or a family default', () => {
+  const entry=family('sega-sg-1000',['sega-sg-1000-ntsc','sega-sg-1000-pal']);
+  assert.equal(browserPlayerFor('sega-sg-1000-ntsc',[entry]),null);
+  assert.equal(browserPlayerFor('sega-sg-1000-pal',[entry]),null);
+  assert.equal(browserPlayerFor('sega-sg-1000-ii-ntsc',[entry]),null);
+  assert.equal(browserPlayerFor('sega-sg-1000',[entry]),null);
+  for (const id of ['sega-sg-1000-ntsc','sega-sg-1000-pal','sega-sg-1000-ii-ntsc']) {
+    const capture=captureTargets().find(c=>c.machineId===id);
+    assert.ok(capture?.hasImage);
+    assert.equal(capture.image,`/media/boot/${id}.png`);
+    assert.ok(capture.capture.args.includes(id));
+    assert.match(capture.caption,/Project-written/);
+  }
+  assert.ok(!captureTargets().some(c=>c.machineId==='sega-sg-1000'));
+});

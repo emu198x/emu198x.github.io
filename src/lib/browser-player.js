@@ -1,6 +1,7 @@
 // Physical board -> existing browser family/profile. IDs are stated rather
 // than inferred from names: a published player can predate a board split.
 export const boardProfiles = Object.freeze([
+  ...['sega-sg-1000-ntsc', 'sega-sg-1000-pal', 'sega-sg-1000-ii-ntsc'].map(id => [id, 'sega-sg-1000', id]),
   ['nintendo-snes-ntsc', 'nintendo-snes', 'snes-ntsc'],
   ['nintendo-snes-pal', 'nintendo-snes', 'snes-pal'],
   ['commodore-c64-pal-breadbin', 'commodore-c64', 'pal'],
@@ -69,11 +70,14 @@ export const boardProfiles = Object.freeze([
 ]);
 
 export function browserPlayerFor(machineId, catalog) {
+  // The pinned SG family can switch into the old PAL clock/phase contract.
+  // Enable these board embeds after a corrected family module is published.
+  if (['sega-sg-1000', 'sega-sg-1000-ntsc', 'sega-sg-1000-pal', 'sega-sg-1000-ii-ntsc'].includes(machineId)) return null;
   // Player 0.44.2's PET profiles use the old hybrid firmware/video contract.
   // Even its matching 40/80 ID strings do not qualify these corrected boards.
   // Enable exact mappings only after a corrected player has been published.
   if (['commodore-pet', 'commodore-pet-2001n-32k', 'commodore-pet-4032', 'commodore-pet-8032'].includes(machineId)) return null;
-  if (['microsoft-msx1', 'microsoft-msx2', 'sega-mega-drive', 'nintendo-nes', 'nintendo-snes', 'amstrad-cpc', 'atari-st', 'commodore-c64', 'commodore-c128'].includes(machineId)) return null;
+  if (['sega-sg-1000', 'microsoft-msx1', 'microsoft-msx2', 'sega-mega-drive', 'nintendo-nes', 'nintendo-snes', 'amstrad-cpc', 'atari-st', 'commodore-c64', 'commodore-c128'].includes(machineId)) return null;
   const board = boardProfiles.find(([id]) => id === machineId);
   if (board) {
     const [, family, variant] = board;
