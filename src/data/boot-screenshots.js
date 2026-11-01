@@ -172,11 +172,24 @@ const amigaVariants = [
   amigaVariant('amiga-a500-plus', 'Amiga A500+', 'a500-plus', `${romRoot}/commodore-amiga/kick204.rom`),
   amigaVariant('amiga-a500-maxed', 'Amiga A500 maxed', 'a500-maxed', `${romRoot}/commodore-amiga/kick13.rom`),
   amigaVariant('amiga-a600', 'Amiga A600', 'a600', `${romRoot}/commodore-amiga/kick205.rom`),
-  amigaVariant('amiga-a1200', 'Amiga A1200', 'a1200', `${romRoot}/commodore-amiga/kick31a1200.rom`),
   amigaVariant('amiga-a2000', 'Amiga A2000', 'a2000', `${romRoot}/commodore-amiga/kick13.rom`),
 ];
 
 export const bootScreenshots = [
+  ...['pal', 'ntsc'].map(region => ({
+    id: `commodore-amiga-a1200-${region}`,
+    machineId: `commodore-amiga-a1200-${region}`,
+    name: `Commodore Amiga A1200 ${region.toUpperCase()}`,
+    group: 'Extended',
+    image: `/media/boot/commodore-amiga-a1200-${region}.png`,
+    caption: `A1200 ${region.toUpperCase()} running Kickstart 3.1 after 250 native fields, with no disk inserted.`,
+    rightsNote: defaultRightsNote,
+    capture: {
+      package: 'emu198x-amiga',
+      args: ['--model', region === 'pal' ? 'a1200' : 'a1200-ntsc', '--kickstart', `${romRoot}/commodore-amiga/kick31a1200.rom`, '--frames', '250', '--screenshot', '{output}'],
+      requiredFiles: [`${romRoot}/commodore-amiga/kick31a1200.rom`],
+    },
+  })),
   {
     id: 'atari-520st-pal',
     machineId: 'atari-520st-pal',
