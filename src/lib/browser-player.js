@@ -1,6 +1,8 @@
 // Physical board -> existing browser family/profile. IDs are stated rather
 // than inferred from names: a published player can predate a board split.
 export const boardProfiles = Object.freeze([
+  ['nintendo-snes-ntsc', 'nintendo-snes', 'snes-ntsc'],
+  ['nintendo-snes-pal', 'nintendo-snes', 'snes-pal'],
   ['commodore-c64-pal-breadbin', 'commodore-c64', 'pal'],
   ['commodore-c64-ntsc-breadbin', 'commodore-c64', 'ntsc'],
   ['commodore-c64c-pal', 'commodore-c64', 'c64c-pal'],
@@ -71,7 +73,7 @@ export function browserPlayerFor(machineId, catalog) {
   // Even its matching 40/80 ID strings do not qualify these corrected boards.
   // Enable exact mappings only after a corrected player has been published.
   if (['commodore-pet', 'commodore-pet-2001n-32k', 'commodore-pet-4032', 'commodore-pet-8032'].includes(machineId)) return null;
-  if (['microsoft-msx1', 'microsoft-msx2', 'sega-mega-drive', 'nintendo-nes', 'amstrad-cpc', 'atari-st', 'commodore-c64', 'commodore-c128'].includes(machineId)) return null;
+  if (['microsoft-msx1', 'microsoft-msx2', 'sega-mega-drive', 'nintendo-nes', 'nintendo-snes', 'amstrad-cpc', 'atari-st', 'commodore-c64', 'commodore-c128'].includes(machineId)) return null;
   const board = boardProfiles.find(([id]) => id === machineId);
   if (board) {
     const [, family, variant] = board;
