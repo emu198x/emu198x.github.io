@@ -169,13 +169,28 @@ const amigaVariants = [
     },
   },
   amigaVariant('amiga-a500-a501', 'Amiga A500 + A501', 'a500-a501', `${romRoot}/commodore-amiga/kick13.rom`),
-  amigaVariant('amiga-a500-plus', 'Amiga A500+', 'a500-plus', `${romRoot}/commodore-amiga/kick204.rom`),
   amigaVariant('amiga-a500-maxed', 'Amiga A500 maxed', 'a500-maxed', `${romRoot}/commodore-amiga/kick13.rom`),
-  amigaVariant('amiga-a600', 'Amiga A600', 'a600', `${romRoot}/commodore-amiga/kick205.rom`),
   amigaVariant('amiga-a2000', 'Amiga A2000', 'a2000', `${romRoot}/commodore-amiga/kick13.rom`),
 ];
 
 export const bootScreenshots = [
+  ...[
+    ['a500-plus', 'A500+', 'kick204.rom', '2.04'],
+    ['a600', 'A600', 'kick205.rom', '2.05'],
+  ].flatMap(([model, name, firmware, version]) => ['pal', 'ntsc'].map(region => ({
+    id: `commodore-amiga-${model}-${region}`,
+    machineId: `commodore-amiga-${model}-${region}`,
+    name: `Commodore Amiga ${name} ${region.toUpperCase()}`,
+    group: 'Extended',
+    image: `/media/boot/commodore-amiga-${model}-${region}.png`,
+    caption: `${name} ${region.toUpperCase()} running Kickstart ${version} after 650 native fields, with no disk inserted.`,
+    rightsNote: defaultRightsNote,
+    capture: {
+      package: 'emu198x-amiga',
+      args: ['--model', region === 'pal' ? model : `${model}-ntsc`, '--kickstart', `${romRoot}/commodore-amiga/${firmware}`, '--frames', '650', '--screenshot', '{output}'],
+      requiredFiles: [`${romRoot}/commodore-amiga/${firmware}`],
+    },
+  }))),
   ...['pal', 'ntsc'].map(region => ({
     id: `commodore-amiga-a1200-${region}`,
     machineId: `commodore-amiga-a1200-${region}`,
