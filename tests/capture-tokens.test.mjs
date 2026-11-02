@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, writeFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { resolveToken, missingInputs, replaceValues } from '../scripts/capture-boot-screenshots.mjs';
+import { resolveToken, missingInputs, replaceValues, buildCargoArgs } from '../scripts/capture-boot-screenshots.mjs';
 
 test('{source} resolves to the flagship root', () => {
   const arg = resolveToken('{source}/test-data/sega/synthetic-cart/game-gear.gg', {}, '/out.png', null, '/src');
@@ -53,4 +53,15 @@ test('replaceValues substitutes {source} everywhere it substitutes {output}', ()
     path: '/src/test-data/spectrum/game.tap',
     args: ['/out.png', '/src/roms/rom.bin'],
   });
+});
+
+
+test('an example capture executes its Cargo example before the argument separator', () => {
+  const args = buildCargoArgs({package: 'runtime-commodore-amiga', example: 'fixed_ocs_boot_capture', args: ['board-pal', '{output}']}, '/capture.png', null, '/source');
+  const separator = args.indexOf('--');
+  assert.deepEqual(args.slice(separator - 2, separator), ['--example', 'fixed_ocs_boot_capture']);
+  assert.deepEqual(args.slice(separator + 1), ['board-pal', '/capture.png']);
+  const binary = buildCargoArgs({package: 'emu198x-amiga', args: ['--model', 'a500']}, '/capture.png', null, '/source');
+  assert.ok(!binary.includes('--example'));
+  assert.deepEqual(binary.slice(binary.indexOf('--') + 1), ['--model', 'a500']);
 });

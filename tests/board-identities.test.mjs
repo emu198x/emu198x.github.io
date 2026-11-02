@@ -258,3 +258,38 @@ test('ECS owners use separate regional captures and reject the A500-only browser
   assert.equal(images.size, 4);
   assert.ok(!captureTargets().some(item => ['amiga-a500-plus', 'amiga-a600'].includes(item.id)));
 });
+
+test('remaining Amiga owners have distinct stock-RAM native captures', () => {
+  const images = new Set();
+  for (const [board, chip, fields, firmware] of [
+    ['a1000', '256', '2600', 'a1000-bootstrap.rom'],
+    ['a500-rev5', '512', '650', 'kick13.rom'],
+    ['a500-rev6a', '512', '650', 'kick204.rom'],
+    ['a2000cr-rev6', '1024', '650', 'kick204.rom'],
+  ]) {
+    for (const region of ['pal', 'ntsc']) {
+      const id = `commodore-amiga-${board}-${region}`;
+      const plate = captureTargets().find(item => item.machineId === id && item.kind === 'boot');
+      assert.ok(plate?.hasImage, id);
+      assert.equal(plate.capture.example, 'fixed_ocs_boot_capture');
+      assert.equal(plate.capture.args[0], id);
+      assert.ok(plate.capture.args[1].endsWith(`/${firmware}`));
+      assert.deepEqual(plate.capture.args.slice(2, 4), [chip, fields]);
+      assert.equal(plate.capture.args.includes('{media}'), board === 'a1000');
+      images.add(plate.image);
+    }
+  }
+  assert.equal(images.size, 8);
+  assert.ok(!captureTargets().some(item => item.machineId === 'commodore-amiga'));
+});
+
+test('the verified A500 PAL browser constructor is labelled by its A501 profile', () => {
+  const entry = family('commodore-amiga', ['a500-a501']);
+  assert.deepEqual(browserPlayerFor('commodore-amiga-a500-rev5-pal', [entry]), {entry, variant: 'a500-a501'});
+  assert.equal(browserPlayerFor('commodore-amiga-a500-rev5-pal', [family('commodore-amiga', ['a500'])]), null);
+  for (const [id, , profile] of boardProfiles.filter(([id]) => id.startsWith('commodore-amiga-') && id !== 'commodore-amiga-a500-rev5-pal')) {
+    assert.equal(browserPlayerFor(id, [family('commodore-amiga', [profile])]), null, id);
+    assert.equal(browserPlayerFor(id, [family(id, [profile])]), null, id);
+  }
+  assert.equal(browserPlayerFor('commodore-amiga', [entry]), null);
+});

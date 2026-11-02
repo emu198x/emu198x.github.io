@@ -124,8 +124,8 @@ function parseArgs(args) {
   return parsed;
 }
 
-function buildCargoArgs(capture, output, scriptPath, sourceRoot) {
-  const args = ['run', '--release', '-q', '-p', capture.package, '--no-default-features', '--'];
+export function buildCargoArgs(capture, output, scriptPath, sourceRoot) {
+  const args = ['run', '--release', '-q', '-p', capture.package, '--no-default-features', ...(capture.example ? ['--example', capture.example] : []), '--'];
   for (const arg of capture.args) {
     args.push(resolveToken(arg, capture, output, scriptPath, sourceRoot));
   }

@@ -112,68 +112,30 @@ const spectrumVariants = [
   ]),
 ];
 
-const amigaVariant = (id, name, model, kickstart) => ({
-  id,
-  machineId: 'commodore-amiga',
-  name,
-  kind: 'boot',
-  title: `${name} boot`,
-  image: `/media/boot/${id}.png`,
-  caption: `${name} Kickstart boot capture.`,
-  rightsNote: defaultRightsNote,
-  capture: {
-    package: 'emu198x-amiga',
-    args: [
-      '--headless',
-      '--model',
-      model,
-      '--kickstart',
-      kickstart,
-      '--frames',
-      '650',
-      '--screenshot',
-      '{output}',
-    ],
-    requiredFiles: [kickstart],
-  },
-});
-
-const amigaVariants = [
-  {
-    id: 'amiga-a1000',
-    machineId: 'commodore-amiga',
-    name: 'Amiga A1000',
-    kind: 'boot',
-    title: 'Amiga A1000 boot',
-    image: '/media/boot/amiga-a1000.png',
-    caption: 'A1000 bootstrap capture. Set EMU198X_BOOT_AMIGA_A1000_DISK to publish this image.',
+export const bootScreenshots = [
+  ...[
+    ['a1000', 'A1000', 'a1000-bootstrap.rom', 256, 2600, '1.2'],
+    ['a500-rev5', 'A500 rev 5', 'kick13.rom', 512, 650, '1.3'],
+    ['a500-rev6a', 'A500 rev 6a', 'kick204.rom', 512, 650, '2.04'],
+    ['a2000cr-rev6', 'A2000CR rev 6', 'kick204.rom', 1024, 650, '2.04'],
+  ].flatMap(([board, name, firmware, chip, fields, version]) => ['pal', 'ntsc'].map(region => ({
+    id: `commodore-amiga-${board}-${region}`,
+    machineId: `commodore-amiga-${board}-${region}`,
+    name: `Commodore Amiga ${name} ${region.toUpperCase()}`,
+    group: board === 'a500-rev5' ? 'Primary' : 'Extended',
+    image: `/media/boot/commodore-amiga-${board}-${region}.png`,
+    caption: board === 'a1000'
+      ? `${name} ${region.toUpperCase()} with 256 KiB chip RAM, running Kickstart 1.2 after the original disk loads into the writable control store. The disk is ejected at handoff; the capture is after 2600 native fields.`
+      : `${name} ${region.toUpperCase()} with ${chip} KiB chip RAM, running Kickstart ${version} after ${fields} native fields, with no disk inserted.`,
     rightsNote: defaultRightsNote,
     capture: {
-      package: 'emu198x-amiga',
-      args: [
-        '--headless',
-        '--model',
-        'a1000',
-        '--kickstart',
-        `${romRoot}/commodore-amiga/a1000-bootstrap.rom`,
-        '--disk',
-        '{media}',
-        '--frames',
-        '900',
-        '--screenshot',
-        '{output}',
-      ],
-      mediaEnv: 'EMU198X_BOOT_AMIGA_A1000_DISK',
-      mediaLabel: 'A1000 Kickstart disk',
-      requiredFiles: [`${romRoot}/commodore-amiga/a1000-bootstrap.rom`],
+      package: 'runtime-commodore-amiga',
+      example: 'fixed_ocs_boot_capture',
+      args: [`commodore-amiga-${board}-${region}`, `${romRoot}/commodore-amiga/${firmware}`, String(chip), String(fields), '{output}', ...(board === 'a1000' ? ['{media}'] : [])],
+      ...(board === 'a1000' ? {mediaEnv: 'EMU198X_BOOT_AMIGA_A1000_DISK', mediaLabel: 'Original A1000 Kickstart disk ZIP'} : {}),
+      requiredFiles: [`${romRoot}/commodore-amiga/${firmware}`],
     },
-  },
-  amigaVariant('amiga-a500-a501', 'Amiga A500 + A501', 'a500-a501', `${romRoot}/commodore-amiga/kick13.rom`),
-  amigaVariant('amiga-a500-maxed', 'Amiga A500 maxed', 'a500-maxed', `${romRoot}/commodore-amiga/kick13.rom`),
-  amigaVariant('amiga-a2000', 'Amiga A2000', 'a2000', `${romRoot}/commodore-amiga/kick13.rom`),
-];
-
-export const bootScreenshots = [
+  }))),
   ...[
     ['a500-plus', 'A500+', 'kick204.rom', '2.04'],
     ['a600', 'A600', 'kick205.rom', '2.05'],
@@ -388,33 +350,6 @@ export const bootScreenshots = [
       ],
       requiredFiles: ['{source}/test-data/synthetic-cartridges/nintendo-nes-logo.nes'],
     },
-  },
-  {
-    id: 'commodore-amiga',
-    machineId: 'commodore-amiga',
-    name: 'Commodore Amiga',
-    kind: 'boot',
-    title: 'Commodore Amiga boot',
-    group: 'Primary',
-    image: '/media/boot/commodore-amiga.png',
-    caption: 'A500 Kickstart 1.3 insert-disk screen.',
-    rightsNote: defaultRightsNote,
-    capture: {
-      package: 'emu198x-amiga',
-      args: [
-        '--headless',
-        '--model',
-        'a500',
-        '--kickstart',
-        `${romRoot}/commodore-amiga/kick13.rom`,
-        '--frames',
-        '650',
-        '--screenshot',
-        '{output}',
-      ],
-      requiredFiles: [`${romRoot}/commodore-amiga/kick13.rom`],
-    },
-    variants: amigaVariants,
   },
   {
     id: 'game-boy',
@@ -1066,7 +1001,7 @@ export const softwareCaptures = [
     },
   }),
   softwareCapture({
-    machineId: 'commodore-amiga',
+    machineId: 'commodore-amiga-a500-rev5-pal',
     work: { title: 'State of the Art', publisher: 'Spaceballs', year: 1992 },
     dump: { file: 'State of the Art (1992-12-29)(Spaceballs)[TP2#1].adf', format: 'ADF disk image', catalogue: 'TOSEC' },
     claim: 'A bootblock demo runs from raw ADF on a 1MB A500 \u2014 the stock 512K model freezes on this opening frame, which is why the capture pins a501.',
