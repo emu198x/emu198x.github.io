@@ -50,6 +50,10 @@ const software = softwareCapture(entry);
     <h1>{entry.machineId}</h1>
     <p class="lede">Ships from <code>{entry.crate}</code>.</p>
 
+    {['commodore-amiga-a500-rev6a-pal', 'commodore-amiga-a2000cr-rev6-pal'].includes(entry.machineId) && (
+      <p>Use Kickstart 2.04 for this PAL board. Kickstart 1.3 currently leaves a white screen; see the <a href="https://github.com/emu198x/emu198x/issues/2237">firmware compatibility issue</a>.</p>
+    )}
+
     <BrowserPlayer system={entry.machineId} />
 
     {captured ? (

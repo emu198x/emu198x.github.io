@@ -11,6 +11,7 @@ const display = entry?.kind === 'game-boy' ? [480, '160 / 144'] : entry?.kind ==
   <emu198x-player system={entry.id} variant={player.variant} style={`--player-width: ${display[0]}px; --player-ratio: ${display[1]}`} >
     <div class="player-placeholder" role="status">Loading player…</div>
   </emu198x-player>
+  {Astro.props.system === 'commodore-amiga-a500-rev5-pal' && <p>This player uses the PAL A500 with an A501 RAM and clock expansion.</p>}
   <noscript><p>Enable JavaScript to use the emulator.</p></noscript>
   <p class="desktop-download" style={`max-width: ${display[0]}px`}><a href="/downloads/">Download Emu198x for desktop</a></p>
 </section>}
