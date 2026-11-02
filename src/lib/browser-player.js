@@ -1,6 +1,10 @@
 // Physical board -> existing browser family/profile. IDs are stated rather
 // than inferred from names: a published player can predate a board split.
 export const boardProfiles = Object.freeze([
+  ['commodore-amiga-a500-plus-pal', 'commodore-amiga', 'commodore-amiga-a500-plus-ecs-pal'],
+  ['commodore-amiga-a500-plus-ntsc', 'commodore-amiga', 'commodore-amiga-a500-plus-ecs-ntsc'],
+  ['commodore-amiga-a600-pal', 'commodore-amiga', 'commodore-amiga-a600-ecs-pal'],
+  ['commodore-amiga-a600-ntsc', 'commodore-amiga', 'commodore-amiga-a600-ecs-ntsc'],
   ['commodore-amiga-a1200-pal', 'commodore-amiga', 'commodore-amiga-a1200-aga-pal'],
   ['commodore-amiga-a1200-ntsc', 'commodore-amiga', 'commodore-amiga-a1200-aga-ntsc'],
   ...['sega-sg-1000-ntsc', 'sega-sg-1000-pal', 'sega-sg-1000-ii-ntsc'].map(id => [id, 'sega-sg-1000', id]),
@@ -73,7 +77,7 @@ export const boardProfiles = Object.freeze([
 
 export function browserPlayerFor(machineId, catalog) {
   // Player 0.44.2 constructs A500+A501 only; its family name does not qualify A1200.
-  if (['commodore-amiga-a1200-pal', 'commodore-amiga-a1200-ntsc'].includes(machineId)) return null;
+  if (['commodore-amiga-a500-plus-pal', 'commodore-amiga-a500-plus-ntsc', 'commodore-amiga-a600-pal', 'commodore-amiga-a600-ntsc', 'commodore-amiga-a1200-pal', 'commodore-amiga-a1200-ntsc'].includes(machineId)) return null;
   // The pinned SG family can switch into the old PAL clock/phase contract.
   // Enable these board embeds after a corrected family module is published.
   if (['sega-sg-1000', 'sega-sg-1000-ntsc', 'sega-sg-1000-pal', 'sega-sg-1000-ii-ntsc'].includes(machineId)) return null;

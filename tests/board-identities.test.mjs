@@ -240,3 +240,21 @@ test('A1200 owners have regional captures and reject the A500-only browser const
   assert.equal(images.size, 2);
   assert.ok(!captureTargets().some(item => item.id === 'amiga-a1200'));
 });
+
+
+test('ECS owners use separate regional captures and reject the A500-only browser constructor', () => {
+  const images = new Set();
+  for (const model of ['a500-plus', 'a600']) {
+    for (const region of ['pal', 'ntsc']) {
+      const id = `commodore-amiga-${model}-${region}`;
+      const profile = `commodore-amiga-${model}-ecs-${region}`;
+      assert.equal(browserPlayerFor(id, [family('commodore-amiga', [profile])]), null);
+      const plate = captureTargets().find(item => item.machineId === id);
+      assert.ok(plate?.hasImage, id);
+      assert.equal(plate.capture.args[1], region === 'pal' ? model : `${model}-ntsc`);
+      images.add(plate.image);
+    }
+  }
+  assert.equal(images.size, 4);
+  assert.ok(!captureTargets().some(item => ['amiga-a500-plus', 'amiga-a600'].includes(item.id)));
+});
