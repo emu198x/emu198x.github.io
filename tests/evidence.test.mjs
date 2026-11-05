@@ -40,6 +40,25 @@ test('a row with a non-numeric count fails and names the machine', () => {
   assert.throws(() => readEvidence(fixture(broken)), /acorn-atom/);
 });
 
+test('separate board-test repository annotation preserves the numeric own-crate count', () => {
+  const annotated = TABLE.replace('| 4 | 9 |',
+    '| 0 (board tests in [emu198x/apple-ii](https://github.com/emu198x/apple-ii)) | 9 |');
+  assert.equal(readEvidence(fixture(annotated)).get('acorn-atom').ownCrates, 0);
+});
+
+test('arbitrary count suffixes and malformed board-test annotations fail', () => {
+  for (const count of [
+    '4 unknown',
+    '4.5',
+    '-1',
+    '4 (board tests in [emu198x/apple-ii](https://github.com/emu198x/other))',
+    '4 (board tests in [emu198x/apple-ii](https://example.invalid/emu198x/apple-ii))',
+  ]) {
+    assert.throws(() => readEvidence(fixture(TABLE.replace('| 4 | 9 |', `| ${count} | 9 |`))),
+      /acorn-atom/, count);
+  }
+});
+
 test('a row whose link label contains ] parses correctly', () => {
   const withBracket = TABLE.replace('[system:atom]', '[foo]bar]');
   const evidence = readEvidence(fixture(withBracket));
