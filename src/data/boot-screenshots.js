@@ -623,20 +623,22 @@ export const bootScreenshots = [
   },
   {
     id: 'atari-5200',
-    machineId: 'atari-5200',
-    name: 'Atari 5200',
+    machineId: 'atari-5200-ca018087',
+    name: 'Atari 5200 CA018087 (four-port NTSC)',
     group: 'Extended',
     image: '/media/boot/atari-5200.png',
     caption: 'Synthetic plate cartridge: the Emu198x wordmark, set in this machine\'s own tiles and drawn through its real video path.',
-    rightsNote: 'Captured from a synthetic cartridge built from source in this project. No third-party software is involved.',
+    rightsNote: 'Captured from a synthetic cartridge built from source in this project, using a locally supplied Atari 5200 BIOS. The BIOS is not distributed.',
     capture: {
       package: 'emu198x-atari-5200',
       args: [
+        '--board', 'ca018087',
+        '--bios', `${romRoot}/atari-5200/5200.rom`,
         '--cart', '{source}/test-data/synthetic-cartridges/atari-5200-logo.bin',
         '--frames', '320',
         '--screenshot', '{output}',
       ],
-      requiredFiles: ['{source}/test-data/synthetic-cartridges/atari-5200-logo.bin'],
+      requiredFiles: ['{source}/test-data/synthetic-cartridges/atari-5200-logo.bin', `${romRoot}/atari-5200/5200.rom`],
     },
   },
   {

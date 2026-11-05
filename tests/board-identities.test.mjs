@@ -48,6 +48,13 @@ test('regional Atari and ZX boards resolve only their own existing player profil
   }
 });
 
+test('the 5200 capture selects the original four-port board explicitly', () => {
+  const capture = bootScreenshots.find(entry => entry.id === 'atari-5200');
+  assert.equal(capture.machineId, 'atari-5200-ca018087');
+  assert.deepEqual(capture.capture.args.slice(0, 2), ['--board', 'ca018087']);
+  assert.ok(!bootScreenshots.some(entry => entry.machineId === 'atari-5200'));
+});
+
 
 test('XL/XE pages select the four stable family profile contracts', () => {
   const entry = family('atari-800xl', ['atari-800xl-ntsc', 'atari-800xl-pal', 'atari-130xe-ntsc', 'atari-130xe-pal']);

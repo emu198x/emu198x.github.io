@@ -76,7 +76,10 @@ export function readEvidence(sourceRoot) {
     }
 
     // Extract counts
-    const ownCrates = Number(cells[2]);
+    // The generator annotates counts when board tests live in another repo.
+    // Match that complete form; parseInt would also accept arbitrary suffixes.
+    const ownCount = /^(\d+)(?: \(board tests in \[([\w.-]+\/[\w.-]+)\]\(https:\/\/github\.com\/\2\)\))?$/.exec(cells[2]);
+    const ownCrates = ownCount ? Number(ownCount[1]) : NaN;
     const sharedCrates = Number(cells[3]);
 
     if (!Number.isInteger(ownCrates) || !Number.isInteger(sharedCrates)) {

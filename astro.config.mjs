@@ -9,6 +9,7 @@ export default defineConfig({
   site: 'https://emu198x.github.io',
   integrations: [mdx(), sitemap()],
   redirects: {
+    '/systems/atari-5200': '/systems/atari-5200-ca018087/',
     '/systems/commodore-amiga': '/systems/commodore-amiga-a500-rev5-pal/',
     '/systems/sega-sg-1000': '/systems/sega-sg-1000-ntsc/',
     '/systems/nintendo-snes': '/systems/nintendo-snes-ntsc/',
