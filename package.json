@@ -26,7 +26,7 @@
     "@astrojs/markdown-remark": "^7.3.5",
     "@astrojs/mdx": "^8.1.2",
     "@astrojs/sitemap": "^3.7.4",
-    "@emu198x/player": "0.48.2",
+    "@emu198x/player": "0.48.3",
     "astro": "^7.4.4",
     "pagefind": "^1.6.0",
     "smol-toml": "1.9.1"
